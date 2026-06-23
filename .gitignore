@@ -1,0 +1,42 @@
+# 대용량 데이터 / 모델 (Git LFS 또는 별도 전송)
+data/
+models/
+
+# 테스트 결과 (실행 시 생성)
+test-results/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+venv/
+.venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# 환경변수
+.env
+.env.*
+
+# Claude Code 설정 (커밋 제외)
+.claude/
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ONNX / 모델 임시 파일
+*.onnx
+*.bin
+*.npy
+*.pt
+*.pth
