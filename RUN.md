@@ -142,6 +142,8 @@ models/
 새 크롤러가 `musinsa_out/musinsa_db/result.json`과 이미지를 생성한 이후 실행합니다.
 
 ```bash
+# snap 기반 크롤링 (musinsa_out/result.json + 이미지 생성)
+python crawl_musinsa.py
 python scripts/convert_musinsa_out.py
 ```
 
@@ -190,7 +192,7 @@ python src/app.py
 
 ## 6. 외부 서비스·자원
 
-- **인터넷 필요**: `scripts/setup_models.py` (HuggingFace), `scripts/crawl_musinsa.py` (무신사)
+- **인터넷 필요**: `scripts/setup_models.py` (HuggingFace), `crawl_musinsa.py` (무신사)
 - **모델 출처**:
   - YOLOv8n: Ultralytics (자동 다운로드)
   - CLIP ViT-B/32: `openai/clip-vit-base-patch32` (HuggingFace)

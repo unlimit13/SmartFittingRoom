@@ -114,9 +114,10 @@ RPi1 (카메라 + YOLO + Web UI)
 │   ├── clip_image_encoder.onnx    # ~310MB
 │   ├── clip_preprocessor/         # visual_projection.npy + processor config
 │   └── ko_sroberta/               # ONNX + tokenizer (~460MB)
+├── crawl_musinsa.py           # 무신사 snap 크롤러 (snap_id 단위 코디 세트 수집)
 ├── scripts/
 │   ├── setup_models.py        # ONNX 모델 다운로드·변환 (최초 1회)
-│   ├── convert_musinsa_out.py # musinsa_out 스냅 데이터 → data/musinsa_db 변환
+│   ├── convert_musinsa_out.py # musinsa_out → data/musinsa_db/ + snap_outfits.json
 │   ├── build_image_index.py   # CLIP FAISS 인덱스 빌드
 │   └── build_style_vectors.py # ko-sroberta 스타일 벡터 빌드
 ├── tests/                     # pytest 자동화 테스트
@@ -178,10 +179,8 @@ pip install -r requirements_local.txt
 
 # ONNX 모델 변환 + 크롤링 + 인덱스 빌드 (인터넷 필요)
 python scripts/setup_models.py
-python scripts/crawl_musinsa.py --category tops    --count 250
-python scripts/crawl_musinsa.py --category bottoms --count 250
-python scripts/crawl_musinsa.py --category shoes   --count 250
-python scripts/crawl_musinsa.py --category outer   --count 250
+python crawl_musinsa.py                  # snap 기반 크롤링 (musinsa_out/ 생성)
+python scripts/convert_musinsa_out.py    # snap → data/musinsa_db/ + snap_outfits.json
 python scripts/build_image_index.py
 python scripts/build_style_vectors.py
 
