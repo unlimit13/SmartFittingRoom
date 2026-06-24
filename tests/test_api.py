@@ -61,7 +61,6 @@ def client():
     # Patch Camera and Recommender constructors before app module-level code runs.
     # app.py instantiates _camera = Camera() and _recommender = Recommender() at import
     # time, so we must intercept both before import (or module reload).
-    import importlib
     import sys
 
     # Remove cached module so we get a fresh import with our patches applied.
