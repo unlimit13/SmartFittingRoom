@@ -20,7 +20,6 @@
     /* Left: camera */
     .camera-panel { flex: 0 0 50%; }
     .camera-panel img { width: 100%; border-radius: 8px; border: 2px solid #ddd; }
-    #annotated-overlay { display: none; width: 100%; border-radius: 8px; border: 2px solid #4caf50; margin-top: 8px; }
 
     /* Right: controls + results */
     .info-panel { flex: 1; display: flex; flex-direction: column; gap: 12px; }
@@ -32,7 +31,7 @@
     .card h3 { font-size: 0.9rem; color: #666; margin-bottom: 10px; }
 
     /* Palette */
-    #palette-row { display: flex; gap: 8px; align-items: center; }
+    #palette-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .color-chip { width: 36px; height: 36px; border-radius: 4px; border: 1px solid #ccc; }
 
     /* Text input */
@@ -49,7 +48,7 @@
     #recommend-btn:disabled { background: #999; cursor: default; }
 
     /* Status */
-    #status { font-size: 0.8rem; color: #888; min-height: 18px; }
+    #status { font-size: 0.8rem; color: #888; min-height: 18px; margin-top: 6px; }
 
     /* Results */
     #results-container { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -70,7 +69,42 @@
     .result-info a { font-size: 0.78rem; color: #1565c0; }
     .result-info img.qr { width: 72px; margin-top: 6px; display: block; }
 
+    /* Try-On button */
+    #tryon-btn {
+      display: none; width: 100%; margin-top: 12px;
+      padding: 10px; background: #7b1fa2; color: #fff;
+      border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem;
+    }
+    #tryon-btn:hover { background: #9c27b0; }
+    #tryon-btn:disabled { background: #999; cursor: default; }
+    #tryon-status { font-size: 0.8rem; color: #888; min-height: 18px; margin-top: 6px; }
+
     .empty-msg { color: #aaa; font-size: 0.9rem; padding: 8px 0; }
+
+    /* Try-On modal */
+    #tryon-modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    #tryon-modal.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 12px;
+      padding: 20px; max-width: 520px; width: 90%;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    .modal-box h2 { font-size: 1rem; color: #333; }
+    .modal-box img { width: 100%; border-radius: 8px; }
+    .modal-close {
+      padding: 8px 24px; background: #1a1a2e; color: #fff;
+      border: none; border-radius: 6px; cursor: pointer;
+    }
+    .modal-clothes {
+      display: flex; gap: 10px; width: 100%;
+    }
+    .modal-clothes img {
+      flex: 1; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd;
+    }
   </style>
 </head>
 <body>
@@ -81,10 +115,9 @@
 </header>
 
 <div class="container">
-  <!-- Left: camera feed -->
+  <!-- Left: camera feed with live detection -->
   <div class="camera-panel">
-    <img src="/video_feed" alt="카메라 라이브 피드">
-    <img id="annotated-overlay" src="" alt="감지 결과">
+    <img src="/detection_feed" alt="카메라 라이브 피드 (detection)">
   </div>
 
   <!-- Right: info -->
@@ -115,8 +148,21 @@
       <div id="results-container">
         <span class="empty-msg">추천 결과가 여기에 표시됩니다</span>
       </div>
+      <button id="tryon-btn">👗 Virtual Try-On (상의 + 하의 착용해보기)</button>
+      <div id="tryon-status"></div>
     </div>
 
+  </div>
+</div>
+
+<!-- Try-On result modal -->
+<div id="tryon-modal">
+  <div class="modal-box">
+    <h2>Virtual Try-On 결과</h2>
+    <div class="modal-clothes" id="modal-clothes"></div>
+    <img id="tryon-result-img" src="" alt="Try-On 결과">
+    <div id="tryon-elapsed" style="font-size:0.8rem;color:#888;"></div>
+    <button class="modal-close" onclick="closeModal()">닫기</button>
   </div>
 </div>
 
@@ -125,13 +171,24 @@ const btn = document.getElementById('recommend-btn');
 const statusEl = document.getElementById('status');
 const paletteRow = document.getElementById('palette-row');
 const resultsContainer = document.getElementById('results-container');
-const annotatedOverlay = document.getElementById('annotated-overlay');
 const textInput = document.getElementById('text-input');
+const tryonBtn = document.getElementById('tryon-btn');
+const tryonStatus = document.getElementById('tryon-status');
+const tryonModal = document.getElementById('tryon-modal');
+const tryonResultImg = document.getElementById('tryon-result-img');
+const tryonElapsed = document.getElementById('tryon-elapsed');
+const modalClothes = document.getElementById('modal-clothes');
+
+let tryonTop = null;    // {image_path, name}
+let tryonBottom = null; // {image_path, name}
 
 btn.addEventListener('click', async () => {
   btn.disabled = true;
   statusEl.textContent = '분석 중...';
   resultsContainer.innerHTML = '<span class="empty-msg">분석 중입니다...</span>';
+  tryonBtn.style.display = 'none';
+  tryonTop = null;
+  tryonBottom = null;
 
   const t0 = Date.now();
   try {
@@ -147,12 +204,6 @@ btn.addEventListener('click', async () => {
       statusEl.textContent = '오류: ' + data.error;
       resultsContainer.innerHTML = '<span class="empty-msg">오류가 발생했습니다</span>';
       return;
-    }
-
-    // Show annotated frame
-    if (data.annotated_b64) {
-      annotatedOverlay.src = 'data:image/jpeg;base64,' + data.annotated_b64;
-      annotatedOverlay.style.display = 'block';
     }
 
     // Update palette
@@ -185,6 +236,15 @@ btn.addEventListener('click', async () => {
       </div>
     `).join('');
 
+    // Collect first top & bottom for try-on
+    for (const r of data.results) {
+      if (!tryonTop && r.category === 'tops' && r.image_path)
+        tryonTop = { image_path: r.image_path, name: r.name };
+      if (!tryonBottom && r.category === 'bottoms' && r.image_path)
+        tryonBottom = { image_path: r.image_path, name: r.name };
+    }
+    if (tryonTop || tryonBottom) tryonBtn.style.display = 'block';
+
   } catch (e) {
     statusEl.textContent = '네트워크 오류: ' + e.message;
     resultsContainer.innerHTML = '<span class="empty-msg">오류가 발생했습니다</span>';
@@ -193,9 +253,58 @@ btn.addEventListener('click', async () => {
   }
 });
 
-// Allow Enter key to trigger recommendation
 textInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') btn.click();
+});
+
+tryonBtn.addEventListener('click', async () => {
+  tryonBtn.disabled = true;
+  tryonStatus.textContent = 'Virtual Try-On 생성 중... (30~60초 소요)';
+
+  try {
+    const body = {};
+    if (tryonTop)    body.top_image_path    = tryonTop.image_path;
+    if (tryonBottom) body.bottom_image_path = tryonBottom.image_path;
+
+    const t0 = Date.now();
+    const resp = await fetch('/tryon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await resp.json();
+
+    if (data.error) {
+      tryonStatus.textContent = '오류: ' + data.error;
+      return;
+    }
+
+    // Show clothes thumbnails in modal
+    const clothesHtml = [
+      tryonTop    ? `<img src="/product_image/${tryonTop.image_path}"    title="${tryonTop.name}">` : '',
+      tryonBottom ? `<img src="/product_image/${tryonBottom.image_path}" title="${tryonBottom.name}">` : '',
+    ].join('');
+    modalClothes.innerHTML = clothesHtml;
+
+    tryonResultImg.src = 'data:image/jpeg;base64,' + data.result_b64;
+    tryonElapsed.textContent = `소요 시간: ${data.elapsed_ms}ms`;
+    tryonModal.classList.add('open');
+    tryonStatus.textContent = `완료 (${data.elapsed_ms}ms)`;
+
+  } catch (e) {
+    tryonStatus.textContent = '네트워크 오류: ' + e.message;
+  } finally {
+    tryonBtn.disabled = false;
+  }
+});
+
+function closeModal() {
+  tryonModal.classList.remove('open');
+}
+
+// Close modal on backdrop click
+tryonModal.addEventListener('click', e => {
+  if (e.target === tryonModal) closeModal();
 });
 </script>
 </body>

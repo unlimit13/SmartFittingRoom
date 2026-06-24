@@ -102,11 +102,16 @@ class Detector:
         cv2.putText(annotated, f"person {best['confidence']:.2f}",
                     (x1, y1 - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
+        REGION_COLOR = {"tops": (255, 100, 0), "bottoms": (0, 100, 255), "shoes": (180, 0, 255)}
         for cat, (r0, r1) in SPLIT.items():
             cy1 = max(0, int(y1 + box_h * r0))
             cy2 = min(orig_h, int(y1 + box_h * r1))
             cx1, cx2 = max(0, x1), min(orig_w, x2)
             if cy2 > cy1 and cx2 > cx1:
                 crops[cat] = frame[cy1:cy2, cx1:cx2].copy()
+                color = REGION_COLOR[cat]
+                cv2.rectangle(annotated, (cx1, cy1), (cx2, cy2), color, 1)
+                cv2.putText(annotated, cat, (cx1 + 4, cy1 + 14),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
 
         return {"persons": persons, "crops": crops, "annotated": annotated}
