@@ -100,4 +100,4 @@ def test_recommend_outfit_fallback_when_no_crop(rec):
     }
     result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
     assert "outfits" in result
-    rec.embedder.embed.assert_called_once()
+    rec.embedder.embed.assert_called_once_with(DUMMY_FRAME)
