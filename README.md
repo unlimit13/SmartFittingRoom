@@ -149,8 +149,8 @@ pip install -r requirements.txt
 
 # 4. models / data 다운로드 (구글 드라이브, 최초 1회)
 pip install gdown
-gdown --id 1MxdwuFzMfO3StJkBzegM7vFWaVP-T-gq -O models.zip
-gdown --id 1bpFxQGhlaTBVND8AIlBk7yfjgs8uacw8 -O data.zip
+gdown 1MxdwuFzMfO3StJkBzegM7vFWaVP-T-gq -O models.zip
+gdown 1bpFxQGhlaTBVND8AIlBk7yfjgs8uacw8 -O data.zip
 unzip models.zip && rm models.zip
 unzip data.zip   && rm data.zip
 

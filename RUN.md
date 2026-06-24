@@ -109,11 +109,11 @@ source env/bin/activate
 pip install gdown
 
 # models 다운로드 (~780MB)
-gdown --id 1MxdwuFzMfO3StJkBzegM7vFWaVP-T-gq -O models.zip
+gdown 1MxdwuFzMfO3StJkBzegM7vFWaVP-T-gq -O models.zip
 unzip models.zip && rm models.zip
 
 # data 다운로드 (~200MB)
-gdown --id 1bpFxQGhlaTBVND8AIlBk7yfjgs8uacw8 -O data.zip
+gdown 1bpFxQGhlaTBVND8AIlBk7yfjgs8uacw8 -O data.zip
 unzip data.zip && rm data.zip
 ```
 
