@@ -40,3 +40,6 @@ build/
 *.npy
 *.pt
 *.pth
+
+# 데이터
+.jpg
