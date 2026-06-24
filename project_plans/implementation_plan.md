@@ -32,28 +32,32 @@
   ↓
 [YOLOv8n ONNX] — person 감지(COCO class 0) → 수직 분할 비율로 크롭
   tops: 0~45%, bottoms: 40~80%, shoes: 75~100%
-  ↓ (tops/bottoms/shoes 각 크롭 개별 처리)        ↓
-[CLIP ViT-B/32 ONNX]                         [OpenCV K-means]
- CLS 토큰(768-dim) + visual_projection.npy    색상 팔레트 추출 (3색, BGR→RGB)
+  ↓ anchor_category 크롭 선택 (tops 또는 bottoms)    ↓
+[CLIP ViT-B/32 ONNX]                              [OpenCV K-means]
+ CLS 토큰(768-dim) + visual_projection.npy (768×512)  앵커 크롭 색상 팔레트 추출 (3색, BGR→RGB)
  → L2 정규화 512-dim 벡터
-  ↓ (카테고리별 개별 검색, over-fetch k×3)
-[FAISS IndexFlatL2] — 카테고리 필터 → 후보 Top-50
+  ↓ (anchor_category 기준 FAISS 검색, over-fetch k×3)
+[FAISS IndexFlatL2] — 카테고리 필터 → 후보 Top-20
+  ↓ (snap_id 기반 그룹핑)
+후보 상품의 snap_id별 최고 CLIP 점수 집계 → anchor_score 상위 Top-3 스냅 선정
   ↓
-[ko-sroberta ONNX + Mean Pooling] ← [한국어 텍스트 입력]
- L2 정규화 768-dim 벡터 ↔ 상품 스타일 벡터(style_vectors.npy) 내적
+[snap_outfits.json] — snap_id → {tops, bottoms, shoes} 상품 ID 목록 조회
   ↓
-[Reranker] — α×clip_sim + β×text_sim + γ×color_compat
-  텍스트 있음: α=0.4, β=0.4, γ=0.2
-  텍스트 없음: α=0.6, β=0.0, γ=0.4
-  카테고리당 top-1 추출 → 전체 합산 정렬 → 최종 Top-3
+[metadata.json] — 상품 ID → {name, url, image_path, ...} 상품 정보 조회 + QR코드 생성
   ↓
-[Flask 웹 앱] — MJPEG 스트리밍 + 추천 JSON + base64 QR코드
+[Flask 웹 앱] — MJPEG 스트리밍 + 코디 세트 3개 JSON + base64 QR코드
 ```
 
-**2단계 검색 구조:**
-- 1단계 (시각): CLIP 이미지 임베딩 → FAISS로 카테고리당 후보 50개 추출 (이미지↔이미지)
-- 2단계 (텍스트): ko-sroberta Mean Pooling으로 한국어 입력 인코딩 → 사전 빌드된 스타일 벡터와 내적 → 리랭킹 (텍스트↔텍스트)
-- 카테고리별 top-1 선정 후 전체 정렬하여 top-3 반환
+**스냅 기반 추천 구조 (현재 구현):**
+- 무신사 스냅(snap) = 코디 사진에서 태깅된 완전한 코디 세트 (상의+하의+신발)
+- `anchor_category` (tops 또는 bottoms)의 CLIP 이미지 유사도로 관련 스냅을 탐색
+- `snap_id` 기준으로 후보를 집계하여 코디 세트 전체를 Top-3으로 반환
+- 현재 DB: 56개 상품, 19개 스냅 코디
+
+**텍스트 인코더 및 리랭커 (구현됨, 현재 미연결):**
+- `text_encoder.py`: ko-sroberta ONNX Mean Pooling → 768-dim L2 정규화 벡터
+- `reranker.py`: `α×clip_sim + β×text_sim + γ×color_compat` 스코어링 로직 구현
+- 현재 `recommender.py`의 `recommend_outfit()`은 text_query 파라미터를 받지만 미사용 상태
 
 ### 사용 보드
 
@@ -64,14 +68,15 @@
 | 역할 | 선택 | 비고 |
 |---|---|---|
 | 의류 감지 | YOLOv8n (ONNX) | COCO person class 0 감지 + 수직 분할 (tops/bottoms/shoes) |
-| 이미지 임베딩 | CLIP ViT-B/32 (ONNX) | CLS 토큰(768-dim) × visual_projection.npy → 512-dim, L2 정규화 |
-| 한국어 텍스트 임베딩 | `jhgan/ko-sroberta-multitask` (ONNX) | Mean Pooling → 768-dim, L2 정규화, 추론 ~200ms |
-| 유사도 검색 | FAISS IndexFlatL2 | CPU 전용, over-fetch(k×3) 후 카테고리 필터 |
-| 색상 분석 | OpenCV K-means (BGR) | k=3, 빈도순 정렬 → #RRGGBB hex 반환 |
-| 색상 호환성 | HSV 규칙 기반 | 유사색(±30°)=1.0, 보색(150~210°)=0.6, 무채색=0.8, 기타=0.4 |
+| 이미지 임베딩 | CLIP ViT-B/32 (ONNX) | CLS 토큰(768-dim) × visual_projection.npy (768×512) → 512-dim, L2 정규화 |
+| 한국어 텍스트 임베딩 | `jhgan/ko-sroberta-multitask` (ONNX) | Mean Pooling → 768-dim, L2 정규화 (구현됨, 현재 미연결) |
+| 유사도 검색 | FAISS IndexFlatL2 | CPU 전용, over-fetch(k×3) 후 카테고리 필터, anchor Top-20 |
+| 스냅 기반 추천 | snap_outfits.json | snap_id 기준 코디 세트 집계 → Top-3 완전 코디 반환 |
+| 색상 분석 | OpenCV K-means (BGR) | k=3, 빈도순 정렬 → #RRGGBB hex 반환 (앵커 크롭 대상) |
+| 색상 호환성 | HSV 규칙 기반 (reranker.py) | 유사색(±30°)=1.0, 보색(150~210°)=0.6, 무채색=0.8, 기타=0.4 (현재 미사용) |
 | 웹 서버 | Flask | MJPEG 스트리밍 + REST API + base64 annotated frame |
-| QR코드 생성 | `qrcode` 라이브러리 | PNG base64로 JSON에 포함 |
-| 테스트 | pytest | 자동화 테스트 7종 (모델 없을 시 skip 처리) |
+| QR코드 생성 | `qrcode` 라이브러리 | PNG base64로 JSON에 포함, 상품당 1개 |
+| 테스트 | pytest | 자동화 테스트 9개 파일 (모델 없을 시 skip 처리) |
 
 ### 추론 시간 예측 (RPi5 기준)
 
@@ -89,45 +94,51 @@
 ```
 project/
 ├── src/
-│   ├── app.py              # Flask 진입점, 라우팅 (/, /video_feed, /recommend, /health)
-│   ├── camera.py           # 웹캠 캡처 백그라운드 스레드 + MJPEG 스트리밍 (FPS 오버레이)
+│   ├── app.py              # Flask 진입점 (/, /video_feed, /detection_feed, /recommend, /tryon, /product_image, /health)
+│   ├── camera.py           # 웹캠 캡처 백그라운드 스레드 + MJPEG 스트리밍
 │   ├── detector.py         # YOLOv8n ONNX: person 감지 + 수직 분할 → crops dict
-│   ├── embedder.py         # CLIP ViT-B/32 ONNX: CLS 토큰 + visual_projection → 512-dim
+│   ├── embedder.py         # CLIP ViT-B/32 ONNX: CLS 토큰 × visual_projection.npy → 512-dim L2 정규화
 │   ├── text_encoder.py     # ko-sroberta ONNX: Mean Pooling → 768-dim L2 정규화
-│   ├── searcher.py         # FAISS 검색 (over-fetch × 3, 카테고리 필터)
-│   ├── reranker.py         # 리랭킹 + HSV 색상 호환성 + 팔레트 추출 (extract_palette)
-│   ├── recommender.py      # 통합 파이프라인: 카테고리별 검색 → 합산 top-3
+│   ├── searcher.py         # FAISS 검색 (over-fetch k×3, 카테고리 필터, snap_id 포함 반환)
+│   ├── reranker.py         # HSV 색상 호환성 + 팔레트 추출 + 리랭킹 로직 (현재 미호출)
+│   ├── recommender.py      # 스냅 기반 파이프라인: anchor → FAISS → snap 집계 → Top-3 코디 세트
+│   ├── tryon.py            # 가상 피팅 (외부 서비스 연동)
 │   └── templates/
-│       └── index.html      # 웹 UI (카메라 피드 + 텍스트 입력 + 추천 패널)
+│       └── index.html      # 웹 UI (anchor 토글 + 코디 세트 카드 3개)
 ├── data/
 │   ├── musinsa_db/
-│   │   ├── tops/           # 상의 이미지 (convert_musinsa_out.py 생성)
-│   │   ├── bottoms/        # 하의 이미지
-│   │   ├── shoes/          # 신발 이미지
-│   │   └── metadata.json   # product_id, url, category, image_path, name, style_text, dominant_color
+│   │   ├── tops/           # 상의 이미지 19장
+│   │   ├── bottoms/        # 하의 이미지 19장
+│   │   ├── shoes/          # 신발 이미지 18장
+│   │   ├── metadata.json   # 56개 상품: product_id, snap_id, category, url, image_path, name, style_text, dominant_color
+│   │   └── snap_outfits.json  # 19개 스냅 코디: snap_id → {tops, bottoms, shoes} 상품 ID 목록
 │   └── faiss_index/
-│       ├── index.bin       # CLIP 이미지 벡터 기반 FAISS 인덱스
-│       └── style_vectors.npy  # 상품별 ko-sroberta 스타일 벡터 (사전 빌드)
+│       ├── index.bin          # CLIP 이미지 벡터 기반 FAISS 인덱스 (56벡터)
+│       ├── id_map.json        # 인덱스 순서 → product_id 매핑
+│       └── style_vectors.npy  # 상품별 ko-sroberta 스타일 벡터 (56×768)
 ├── musinsa_out/
-│   └── musinsa_db/         # 새 크롤러 원본 출력 (snap_id 기반 코디 세트)
+│   └── result.json            # 크롤러 원본 출력 (snap_id 기반 코디 세트)
 ├── models/
 │   ├── yolov8n.onnx
 │   ├── clip_image_encoder.onnx
-│   ├── clip_preprocessor/      # CLIP 전처리 설정
-│   └── ko_sroberta/            # ko-sroberta ONNX 모델 파일
+│   ├── clip_preprocessor/      # visual_projection.npy (768×512)
+│   └── ko_sroberta/            # ko-sroberta ONNX 모델 파일 + 토크나이저
 ├── scripts/
-│   ├── convert_musinsa_out.py  # musinsa_out 스냅 데이터 → data/musinsa_db 변환
-│   ├── build_image_index.py    # CLIP 이미지 임베딩 → FAISS 인덱스 빌드
-│   └── build_style_vectors.py  # 상품 태그 → ko-sroberta 스타일 벡터 빌드
+│   ├── convert_musinsa_out.py  # musinsa_out → data/musinsa_db/ + snap_outfits.json 변환
+│   ├── build_image_index.py    # CLIP 이미지 임베딩 → FAISS 인덱스 + id_map.json 빌드
+│   └── build_style_vectors.py  # 상품 style_text → ko-sroberta 스타일 벡터 빌드
 ├── tests/
+│   ├── conftest.py
 │   ├── test_detection.py
 │   ├── test_embedding.py       # CLIP 이미지 임베딩 검증
 │   ├── test_text_encoding.py   # ko-sroberta 한국어 인코딩 검증
 │   ├── test_search.py
-│   ├── test_reranking.py       # 텍스트 리랭킹 로직 검증
-│   ├── test_api.py
-│   └── test_stream.py
-├── test-results/               # pytest 실행 결과 로그
+│   ├── test_reranking.py       # 리랭킹 로직 검증 (color_compat 포함)
+│   ├── test_recommender_outfit.py  # 스냅 기반 추천 파이프라인 검증
+│   ├── test_api.py             # /recommend API 응답 구조 + 성능 검증
+│   ├── test_stream.py
+│   └── test_convert.py
+├── deliverables/               # 제출 산출물
 ├── requirements.txt
 ├── README.md
 └── RUN.md
@@ -135,11 +146,11 @@ project/
 
 ### 데이터 준비 (사전 작업, 로컬 맥에서 실행)
 
-새 크롤러가 `musinsa_out/musinsa_db/result.json` (snap_id 기반 코디 세트)을 생성하면,
-`convert_musinsa_out.py`로 기존 플랫 상품 목록 형식으로 변환한다.
+새 크롤러가 `musinsa_out/result.json` (snap_id 기반 코디 세트)을 생성하면,
+`convert_musinsa_out.py`로 플랫 상품 목록 형식으로 변환한다.
 snap 단위 해시태그가 각 상품의 `style_text`로 활용된다.
 
-**원본 데이터 스키마** (`musinsa_out/musinsa_db/result.json`):
+**원본 데이터 스키마** (`musinsa_out/result.json`):
 ```json
 {
   "snap_id": "1518836080194369513",
@@ -158,13 +169,27 @@ snap 단위 해시태그가 각 상품의 `style_text`로 활용된다.
 {
   "product_id": "musinsa_6237058",
   "category": "tops",
+  "snap_id": "1518836080194369513",
   "url": "https://www.musinsa.com/products/6237058",
   "image_path": "tops/musinsa_6237058.jpg",
   "name": "린넨 스카시 카라 반팔 니트 OLIVE",
   "style_text": "린넨 스카시 카라 반팔 니트 OLIVE, dailylook, ootd, 남자데일리룩, ...",
-  "dominant_color": "#3D6B9F"
+  "dominant_color": "#DCDCD2"
 }
 ```
+
+**snap_outfits.json 스키마** (`data/musinsa_db/snap_outfits.json`):
+```json
+{
+  "1518836080194369513": {
+    "tops":    ["musinsa_6237058"],
+    "bottoms": ["musinsa_6407908"],
+    "shoes":   ["musinsa_5934436"]
+  }
+}
+```
+
+**현재 DB 규모**: 56개 상품 (상의 19, 하의 19, 신발 18), 19개 스냅 코디
 
 ```bash
 # 1. musinsa_out 스냅 데이터 변환 (로컬 맥)
@@ -209,42 +234,69 @@ rsync -av ./models/ willtek@10.56.130.185:/home/willtek/project/models/
 | 엔드포인트 | 역할 |
 |---|---|
 | `GET /` | 메인 웹 UI |
-| `GET /video_feed` | MJPEG 스트리밍 |
-| `POST /recommend` | 이미지 감지 + 텍스트 입력 → 추천 결과 반환 (JSON) |
+| `GET /video_feed` | 원본 MJPEG 스트리밍 |
+| `GET /detection_feed` | YOLOv8n 감지 오버레이 MJPEG 스트리밍 |
+| `POST /recommend` | anchor_category 기반 스냅 추천 → 코디 세트 3개 반환 (JSON) |
+| `POST /tryon` | 가상 피팅 (외부 서비스 연동) |
+| `GET /product_image/<rel_path>` | data/musinsa_db/ 내 상품 이미지 서빙 |
 | `GET /health` | 서버 상태 확인 |
 
 `/recommend` 요청 body:
 ```json
 {
   "text_query": "맑은 날 여자친구와 데이트하려고 해. 추천해줘.",
+  "anchor_category": "bottoms",
   "use_camera": true
 }
 ```
 
-### 리랭킹 로직 상세
+`/recommend` 응답 body:
+```json
+{
+  "detected": true,
+  "palette": ["#3D6B9F", "#FFFFFF", "#000000"],
+  "outfits": [
+    {
+      "snap_id": "1518836080194369513",
+      "anchor_score": 0.9432,
+      "tops":    [{"product_id": "musinsa_6237058", "name": "린넨 니트", "url": "...", "image_path": "...", "qr_b64": "..."}],
+      "bottoms": [{"product_id": "musinsa_6407908", "name": "...", "url": "...", "image_path": "...", "qr_b64": "..."}],
+      "shoes":   [{"product_id": "musinsa_5934436", "name": "...", "url": "...", "image_path": "...", "qr_b64": "..."}]
+    }
+  ],
+  "annotated_b64": "...",
+  "elapsed_ms": 580
+}
+```
+
+### 추천 로직 상세 (현재 구현)
 
 ```
-1단계 출력: FAISS Top-50 후보 (CLIP 이미지 유사도 기준)
+FAISS 검색 출력: anchor_category Top-20 후보 (CLIP 이미지 유사도 기준)
 
-2단계 입력:
-  - 텍스트 쿼리 벡터 (ko-sroberta)
-  - 각 후보 상품의 스타일 벡터 (ko-sroberta, 사전 빌드)
+스냅 집계:
+  후보 상품 각각의 snap_id별로 최고 CLIP 유사도 score 보존
+  → snap_score 기준 내림차순 정렬 → Top-3 스냅 선정
 
-2단계 점수:
-  최종_점수 = α × CLIP_유사도 + β × 텍스트_유사도 + γ × 색상_호환성
-  (기본값: α=0.4, β=0.4, γ=0.2)
-
-  텍스트 입력 없을 시: α=0.6, β=0.0, γ=0.4 (시각+색상만 사용)
-
-출력: 점수 상위 Top-3
+출력:
+  top-3 snap_id의 전체 코디 세트 (tops + bottoms + shoes)
 ```
 
-### 색상 호환성 로직
+### 리랭킹 로직 (reranker.py에 구현됨, 현재 recommender.py에서 미호출)
 
-HSV 색공간 기반 규칙:
-- **유사색**: 색상각 차이 ±30° 이내 → 높은 호환성 점수
-- **보색**: 색상각 차이 150~210° → 중간 호환성 점수
-- **무채색 (흰/회/검)**: 모든 색상과 호환 → 기본 점수 부여
+```
+최종_점수 = α × CLIP_유사도 + β × 텍스트_유사도 + γ × 색상_호환성
+  텍스트 있음: α=0.4, β=0.4, γ=0.2
+  텍스트 없음: α=0.6, β=0.0, γ=0.4
+```
+
+### 색상 호환성 로직 (reranker.py)
+
+HSV 색공간 기반 규칙 (채도 < 30 또는 명도 < 30이면 무채색으로 처리):
+- **유사색**: 색상각 차이 ±30° 이내 → 1.0
+- **보색**: 색상각 차이 150~210° → 0.6
+- **무채색**: 모든 색상과 호환 → 0.8
+- **기타**: → 0.4
 
 ---
 

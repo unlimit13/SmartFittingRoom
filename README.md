@@ -17,11 +17,11 @@
 ## 주요 기능
 
 - **실시간 의류 감지** — YOLOv8n으로 사람(COCO class 0)을 감지 후 바운딩 박스를 상의/하의/신발 영역으로 수직 분할
-- **이미지 유사도 검색** — CLIP ViT-B/32 임베딩(CLS 토큰 + visual projection) + FAISS로 무신사 DB에서 카테고리별 유사 아이템 검색
-- **한국어 텍스트 조건 반영** — ko-sroberta Mean Pooling으로 자연어 입력을 인코딩하여 추천 결과 리랭킹
-  - 예: *"맑은 날 여자친구와 데이트하려고 해. 추천해줘."*
-- **색상 팔레트 기반 코디 완성** — OpenCV K-means로 착용 색상 추출 후 HSV 호환성 점수로 아이템 우선 추천
-- **무신사 상품 QR코드** — 추천 결과에서 바로 구매 페이지로 이동
+- **앵커 카테고리 선택** — 상의(tops) 또는 하의(bottoms) 중 하나를 앵커로 지정하여 CLIP 이미지 임베딩 기반 유사 검색 수행
+- **스냅 기반 코디 세트 추천** — 무신사 스냅(snap) 단위로 묶인 19개 코디 세트 중 앵커 유사도 상위 3개 완전 코디(상의+하의+신발)를 추천
+- **색상 팔레트 추출** — OpenCV K-means로 앵커 크롭 영역의 지배색 3개를 추출하여 UI에 표시
+- **무신사 상품 QR코드** — 추천된 각 상품에서 바로 무신사 구매 페이지로 이동 가능
+- **감지 스트림 분리** — `/detection_feed`로 YOLOv8n 감지 오버레이 MJPEG 스트림 별도 제공
 - **분산 Edge AI** (Phase 2 — 계획됨, 미구현) — 4대 RPi5가 역할 분담하는 마이크로서비스 파이프라인
 
 ---
@@ -34,21 +34,24 @@
 [웹캠]
   ↓
 [YOLOv8n ONNX] ── person 감지(COCO class 0) → 수직 분할
-  ↓ tops/bottoms/shoes 크롭        ↓
-[CLIP ViT-B/32 ONNX]          [OpenCV K-means]
- CLS토큰 + visual_projection    색상 팔레트 추출 (3색)
- → 512-dim 임베딩
-  ↓ (카테고리별 개별 검색)
-[FAISS IndexFlatL2] ── 카테고리 필터 → 후보 Top-50
+  ↓ anchor_category 크롭 (tops 또는 bottoms)   ↓
+[CLIP ViT-B/32 ONNX]                        [OpenCV K-means]
+ CLS토큰 + visual_projection                  색상 팔레트 추출 (3색)
+ → L2 정규화 512-dim 임베딩
   ↓
-[ko-sroberta ONNX] ← [한국어 텍스트 입력]
- Mean Pooling → 768-dim → 스타일 벡터 비교
+[FAISS IndexFlatL2] ── 카테고리 필터 → 후보 Top-20
+  ↓ (snap_id 기반 그룹핑)
+snap_id별 최고 점수로 집계 → anchor_score 상위 Top-3 스냅 선정
   ↓
-[Reranker] ── α×clip_sim + β×text_sim + γ×color_compat
-             카테고리당 top-1 → 전체 정렬 → 최종 Top-3
+[snap_outfits.json] ── snap_id → {tops, bottoms, shoes} 상품 목록 조회
   ↓
-[Flask 웹 앱] ── MJPEG 스트리밍 + 추천 결과 JSON + QR코드
+[Flask 웹 앱] ── MJPEG 스트리밍 + 3개 코디 세트 JSON + QR코드
 ```
+
+**스냅 기반 추천 구조:**
+- 무신사 스냅(snap) = 실제 코디 사진에서 태깅된 완전한 코디 세트 (상의+하의+신발)
+- 현재 DB: 56개 상품, 19개 스냅 코디
+- anchor_category 상품의 CLIP 유사도로 어울리는 코디 세트 전체를 추천
 
 ### Phase 2 — 분산 Edge AI (4대 RPi, 계획됨 — 미구현)
 
@@ -94,25 +97,34 @@ RPi1 (카메라 + YOLO + Web UI)
 ```
 .
 ├── src/
-│   ├── app.py                 # Flask 진입점 (/, /video_feed, /recommend, /health)
+│   ├── app.py                 # Flask 진입점 (/, /video_feed, /detection_feed, /recommend, /tryon, /product_image, /health)
 │   ├── camera.py              # 웹캠 캡처 + MJPEG 스트리밍 (백그라운드 스레드)
 │   ├── detector.py            # YOLOv8n person 감지 + 수직 분할 (tops/bottoms/shoes)
-│   ├── embedder.py            # CLIP ViT-B/32 이미지 임베딩 (CLS + visual_projection)
-│   ├── text_encoder.py        # ko-sroberta Mean Pooling 한국어 텍스트 임베딩
-│   ├── searcher.py            # FAISS 유사도 검색 (카테고리 필터, over-fetch)
-│   ├── reranker.py            # 텍스트 리랭킹 + HSV 색상 호환성 점수 + 팔레트 추출
-│   ├── recommender.py         # 통합 파이프라인 (카테고리별 검색 → 전체 Top-3)
+│   ├── embedder.py            # CLIP ViT-B/32 이미지 임베딩 (CLS + visual_projection → 512-dim)
+│   ├── text_encoder.py        # ko-sroberta Mean Pooling 한국어 텍스트 임베딩 (768-dim)
+│   ├── searcher.py            # FAISS 유사도 검색 (카테고리 필터, over-fetch k×3)
+│   ├── reranker.py            # HSV 색상 호환성 점수 + 팔레트 추출 (+ 리랭킹 로직 보유)
+│   ├── recommender.py         # 스냅 기반 파이프라인 (anchor_category → Top-3 코디 세트)
+│   ├── tryon.py               # 가상 피팅 (외부 서비스 연동)
 │   └── templates/
-│       └── index.html         # 웹 UI
+│       └── index.html         # 웹 UI (anchor 토글 + 코디 세트 카드 3개)
 ├── data/
-│   ├── musinsa_db/            # 변환된 무신사 스냅 상품 이미지 + metadata.json
-│   └── faiss_index/           # 사전 빌드된 FAISS 인덱스 + 스타일 벡터
+│   ├── musinsa_db/
+│   │   ├── tops/              # 상의 이미지 (19장)
+│   │   ├── bottoms/           # 하의 이미지 (19장)
+│   │   ├── shoes/             # 신발 이미지 (18장)
+│   │   ├── metadata.json      # 56개 상품 메타데이터 (product_id, snap_id, category, url, image_path, name, style_text, dominant_color)
+│   │   └── snap_outfits.json  # 19개 스냅 코디 (snap_id → {tops, bottoms, shoes} 상품 ID 목록)
+│   └── faiss_index/
+│       ├── index.bin          # CLIP 이미지 벡터 기반 FAISS 인덱스 (56벡터)
+│       ├── id_map.json        # 인덱스 순서 → product_id 매핑
+│       └── style_vectors.npy  # 상품별 ko-sroberta 스타일 벡터 (56×768)
 ├── musinsa_out/
-│   └── musinsa_db/            # 새 크롤러 원본 출력 (snap_id 기반 코디 세트)
+│   └── result.json            # 크롤러 원본 출력 (snap_id 기반 코디 세트)
 ├── models/
 │   ├── yolov8n.onnx               # ~13MB
 │   ├── clip_image_encoder.onnx    # ~310MB
-│   ├── clip_preprocessor/         # visual_projection.npy + processor config
+│   ├── clip_preprocessor/         # visual_projection.npy (768×512)
 │   └── ko_sroberta/               # ONNX + tokenizer (~460MB)
 ├── crawl_musinsa.py           # 무신사 snap 크롤러 (snap_id 단위 코디 세트 수집)
 ├── scripts/
@@ -120,8 +132,7 @@ RPi1 (카메라 + YOLO + Web UI)
 │   ├── convert_musinsa_out.py # musinsa_out → data/musinsa_db/ + snap_outfits.json
 │   ├── build_image_index.py   # CLIP FAISS 인덱스 빌드
 │   └── build_style_vectors.py # ko-sroberta 스타일 벡터 빌드
-├── tests/                     # pytest 자동화 테스트
-├── test-results/              # 테스트 실행 결과 로그
+├── tests/                     # pytest 자동화 테스트 (9개 파일)
 ├── deliverables/              # 제출 산출물
 ├── project_plans/             # 구현 계획 문서
 ├── project_guidelines/        # 평가 가이드
@@ -198,10 +209,10 @@ rsync -av ./models/ willtek@10.56.130.185:/home/willtek/work/Project/SmartFittin
 | R-01 | 웹캠 라이브 피드 표시 | MJPEG 스트림 끊김 없이 출력 |
 | R-02 | 의류 영역 자동 감지 | 바운딩 박스 반환, 신뢰도 ≥ 0.5 |
 | R-03 | CLIP 이미지 임베딩 | 512-dim 벡터, 추론 ≤ 500ms |
-| R-04 | 색상 팔레트 추출 | 지배색 3개 UI 표시 |
-| R-05 | FAISS 유사도 검색 | Top-50 반환, ≤ 100ms |
-| R-06 | 한국어 텍스트 기반 리랭킹 | 텍스트 입력 시 추천 순위 변화 확인 |
-| R-07 | 최종 코디 추천 Top-3 표시 | 썸네일 + 상품명 + 카테고리 포함 |
+| R-04 | 색상 팔레트 추출 | 앵커 크롭에서 지배색 3개 UI 표시 |
+| R-05 | FAISS 유사도 검색 | 앵커 카테고리 Top-20 반환, ≤ 100ms |
+| R-06 | 한국어 텍스트 임베딩 | ko-sroberta ONNX로 768-dim 벡터 인코딩 (reranker.py에 구현, 현재 미사용) |
+| R-07 | 스냅 기반 코디 세트 Top-3 표시 | 3개 완전 코디 세트(상의+하의+신발) + QR코드 포함 |
 | R-08 | 무신사 QR코드 생성 | 스캔 시 상품 페이지 이동 |
 | R-09 | 전체 응답 시간 ≤ 2초 | 5회 평균 ≤ 2,000ms |
 | R-10 | 완전 On-Device 동작 | 인터넷 차단 상태에서 정상 동작 |
