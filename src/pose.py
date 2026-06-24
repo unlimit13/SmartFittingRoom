@@ -59,11 +59,16 @@ class PoseTracker:
             key_present = all(joints[i][2] >= 0.5 for i in REQUIRED)
             all_in_zone = all(
                 zx1 <= joints[i][0] / w <= zx2 and zy1 <= joints[i][1] / h <= zy2
-                for i in visible_idx
+                for i in REQUIRED if joints[i][2] >= 0.5
             )
-            in_zone = key_present and all_in_zone and bool(visible_idx)
+            in_zone = key_present and all_in_zone
 
-            rw = joints[16][:2] if len(joints) > 16 and joints[16][2] >= 0.5 else None
+            rh = None
+            for idx in [20, 18, 22, 16]:  # index → pinky → thumb → wrist
+                if len(joints) > idx and joints[idx][2] >= 0.4:
+                    rh = joints[idx][:2]
+                    break
+            rw = rh
 
         triggered = False
         hold_pct = 0.0
@@ -132,18 +137,5 @@ class PoseTracker:
         if rw:
             cv2.circle(frame, tuple(rw), 12, (0, 255, 180), 2)
             cv2.circle(frame, tuple(rw), 4,  (0, 255, 180), -1)
-
-        joints = state.get("joints")
-        if joints:
-            for a, b in CONNECTIONS:
-                if a >= len(joints) or b >= len(joints):
-                    continue
-                if joints[a][2] < 0.3 or joints[b][2] < 0.3:
-                    continue
-                cv2.line(frame, joints[a][:2], joints[b][:2], (80, 180, 255), 2)
-            for pt in joints:
-                if pt[2] < 0.3:
-                    continue
-                cv2.circle(frame, pt[:2], 3, (255, 255, 255), -1)
 
         return frame

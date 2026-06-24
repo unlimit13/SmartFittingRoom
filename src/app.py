@@ -34,7 +34,7 @@ _person_url_future: concurrent.futures.Future | None = None
 _tops_result_url: str | None = None   # reused as person image for bottoms try-on
 
 _pose_lock      = threading.Lock()
-_pose_state     = {"in_zone": False, "hold_pct": 0.0, "triggered": False, "disabled": False, "rw": None}
+_pose_state     = {"in_zone": False, "hold_pct": 0.0, "triggered": False, "disabled": False, "rw": None, "joints": None}
 _pose_triggered = False   # consumed once by /pose_poll
 
 
@@ -42,7 +42,7 @@ def _pose_loop():
     global _pose_triggered
     while True:
         try:
-            time.sleep(0.2)
+            time.sleep(0.04)
             frame = _camera.get_frame()
             if frame is None:
                 continue
@@ -53,6 +53,7 @@ def _pose_loop():
                 _pose_state["triggered"] = state["triggered"]
                 _pose_state["disabled"]  = state["disabled"]
                 _pose_state["rw"]        = state["rw"]
+                _pose_state["joints"]    = state["joints"]
                 if state["triggered"]:
                     _pose_triggered = True
         except Exception as e:

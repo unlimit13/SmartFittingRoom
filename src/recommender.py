@@ -50,10 +50,6 @@ class Recommender:
         return result
 
     def recommend_outfit(self, frame, anchor_category: str, text_query: str = "") -> dict:
-        """
-        anchor_category: "tops" | "bottoms"
-        Returns dict with detected, annotated_frame, palette, outfits (max 3, score desc).
-        """
         detection = self.detector.detect(frame)
         annotated = detection["annotated"]
         crops = detection["crops"]
@@ -65,32 +61,31 @@ class Recommender:
 
         palette = self.reranker.extract_palette(anchor_crop)
         img_vec = self.embedder.embed(anchor_crop)
-        candidates = self.searcher.search(img_vec, category=anchor_category, top_k=20)
+        text_vec = self.text_encoder.encode(text_query) if text_query.strip() else None
 
-        snap_scores: dict = {}
-        for item in candidates:
-            sid = item.get("snap_id")
-            if not sid:
-                continue
-            if sid not in snap_scores or item["score"] > snap_scores[sid]:
-                snap_scores[sid] = item["score"]
+        def get_items(category, n=1):
+            candidates = self.searcher.search(img_vec, category=category, top_k=20)
+            ranked = self.reranker.rerank(candidates, text_vec, palette, top_n=n)
+            return [
+                {
+                    "product_id": r["product_id"],
+                    "name":       r.get("name", ""),
+                    "url":        r.get("url", ""),
+                    "image_path": r.get("image_path", ""),
+                    "qr_b64":    self._make_qr(r.get("url", "")),
+                }
+                for r in ranked
+            ]
 
-        top_snap_ids = sorted(snap_scores, key=lambda s: snap_scores[s], reverse=True)[:3]
-
-        outfits = []
-        for sid in top_snap_ids:
-            slot_products = self._snap_outfits.get(sid, {})
-            outfits.append({
-                "snap_id": sid,
-                "anchor_score": round(snap_scores[sid], 4),
-                "tops":    self._resolve_products(slot_products.get("tops", [])),
-                "bottoms": self._resolve_products(slot_products.get("bottoms", [])),
-                "shoes":   self._resolve_products(slot_products.get("shoes", [])),
-            })
+        outfit = {
+            "tops":    get_items("tops"),
+            "bottoms": get_items("bottoms"),
+            "shoes":   get_items("shoes"),
+        }
 
         return {
             "detected": persons_found,
             "annotated_frame": annotated,
             "palette": palette,
-            "outfits": outfits,
+            "outfits": [outfit],
         }

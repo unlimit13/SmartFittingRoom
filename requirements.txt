@@ -14,3 +14,6 @@ qrcode==7.4.2
 pytest==8.3.3
 requests==2.32.3
 transformers==4.44.2   # AutoTokenizer (ko-sroberta 추론 시 필요)
+fal_client==1.0.0
+mediapipe==0.10.18
+ai-edge-litert==2.1.5

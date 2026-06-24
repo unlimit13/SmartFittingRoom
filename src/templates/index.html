@@ -59,11 +59,10 @@
 
     /* Wrist cursor */
     #wrist-cursor {
-      position: absolute; width: 26px; height: 26px; border-radius: 50%;
-      border: 2px solid #0ff; background: rgba(0,255,180,.25);
+      position: absolute; width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid #3b82f6; background: rgba(59,130,246,.35);
       transform: translate(-50%,-50%); pointer-events: none; display: none;
-      box-shadow: 0 0 10px rgba(0,255,180,.5);
-      transition: left .06s linear, top .06s linear;
+      box-shadow: 0 0 8px rgba(59,130,246,.7);
     }
 
     /* Countdown overlay */
@@ -450,7 +449,7 @@ btnCancel.addEventListener('click', doCancel);
 btnTopsT.addEventListener('click',    () => { if (!_busy) { _busy = true; doTryon(_tryonTop, null); } });
 btnBottomsT.addEventListener('click', () => { if (!_busy) { _busy = true; doTryon(null, _tryonBottom); } });
 
-setInterval(pollPose, 200);
+setInterval(pollPose, 50);
 </script>
 </body>
 </html>
