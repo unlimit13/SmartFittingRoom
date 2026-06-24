@@ -1,0 +1,16 @@
+# ============================================================
+# 보드 환경 (Raspberry Pi 5 / aarch64)
+# 용도: Flask 앱 실행 + ONNX 추론
+# 설치: pip install -r requirements.txt
+# ============================================================
+
+flask==3.0.3
+opencv-python==4.10.0.84
+onnxruntime==1.19.2
+faiss-cpu==1.8.0
+numpy==1.26.4
+Pillow==10.4.0
+qrcode==7.4.2
+pytest==8.3.3
+requests==2.32.3
+transformers==4.44.2   # AutoTokenizer (ko-sroberta 추론 시 필요)

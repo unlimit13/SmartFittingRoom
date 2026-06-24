@@ -16,13 +16,13 @@
 
 ## 주요 기능
 
-- **실시간 의류 감지** — YOLOv8n으로 상의/하의/신발 영역 자동 감지 및 바운딩 박스 표시
-- **이미지 유사도 검색** — CLIP ViT-B/32 임베딩 + FAISS로 무신사 DB(1,000장)에서 유사 아이템 검색
-- **한국어 텍스트 조건 반영** — ko-sroberta로 자연어 입력을 인코딩하여 추천 결과 리랭킹
+- **실시간 의류 감지** — YOLOv8n으로 사람(COCO class 0)을 감지 후 바운딩 박스를 상의/하의/신발 영역으로 수직 분할
+- **이미지 유사도 검색** — CLIP ViT-B/32 임베딩(CLS 토큰 + visual projection) + FAISS로 무신사 DB에서 카테고리별 유사 아이템 검색
+- **한국어 텍스트 조건 반영** — ko-sroberta Mean Pooling으로 자연어 입력을 인코딩하여 추천 결과 리랭킹
   - 예: *"맑은 날 여자친구와 데이트하려고 해. 추천해줘."*
-- **색상 팔레트 기반 코디 완성** — 착용 색상과 어울리는 아이템 우선 추천
+- **색상 팔레트 기반 코디 완성** — OpenCV K-means로 착용 색상 추출 후 HSV 호환성 점수로 아이템 우선 추천
 - **무신사 상품 QR코드** — 추천 결과에서 바로 구매 페이지로 이동
-- **분산 Edge AI** (Phase 2) — 4대 RPi5가 역할 분담하는 마이크로서비스 파이프라인
+- **분산 Edge AI** (Phase 2 — 계획됨, 미구현) — 4대 RPi5가 역할 분담하는 마이크로서비스 파이프라인
 
 ---
 
@@ -33,20 +33,24 @@
 ```
 [웹캠]
   ↓
-[YOLOv8n ONNX] ── 의류 영역 크롭
-  ↓                        ↓
-[CLIP ViT-B/32 ONNX]   [OpenCV K-means]
- 이미지 임베딩              색상 팔레트 추출
-  ↓
-[FAISS] ── Top-50 후보 검색
+[YOLOv8n ONNX] ── person 감지(COCO class 0) → 수직 분할
+  ↓ tops/bottoms/shoes 크롭        ↓
+[CLIP ViT-B/32 ONNX]          [OpenCV K-means]
+ CLS토큰 + visual_projection    색상 팔레트 추출 (3색)
+ → 512-dim 임베딩
+  ↓ (카테고리별 개별 검색)
+[FAISS IndexFlatL2] ── 카테고리 필터 → 후보 Top-50
   ↓
 [ko-sroberta ONNX] ← [한국어 텍스트 입력]
- 텍스트 리랭킹 → 최종 Top-3
+ Mean Pooling → 768-dim → 스타일 벡터 비교
   ↓
-[Flask 웹 앱] ── 브라우저에서 시연
+[Reranker] ── α×clip_sim + β×text_sim + γ×color_compat
+             카테고리당 top-1 → 전체 정렬 → 최종 Top-3
+  ↓
+[Flask 웹 앱] ── MJPEG 스트리밍 + 추천 결과 JSON + QR코드
 ```
 
-### Phase 2 — 분산 Edge AI (4대 RPi)
+### Phase 2 — 분산 Edge AI (4대 RPi, 계획됨 — 미구현)
 
 ```
 RPi1 (카메라 + YOLO + Web UI)
@@ -90,27 +94,26 @@ RPi1 (카메라 + YOLO + Web UI)
 ```
 .
 ├── src/
-│   ├── app.py                 # Flask 진입점
-│   ├── camera.py              # 웹캠 캡처 + MJPEG 스트리밍
-│   ├── detector.py            # YOLOv8n 의류 감지
-│   ├── embedder.py            # CLIP 이미지 임베딩
-│   ├── text_encoder.py        # ko-sroberta 한국어 텍스트 임베딩
-│   ├── searcher.py            # FAISS 유사도 검색
-│   ├── reranker.py            # 텍스트 리랭킹 + 색상 호환성 점수
-│   ├── recommender.py         # 통합 추천 파이프라인
-│   ├── worker_embed.py        # Phase 2: RPi2 임베딩 워커
-│   ├── worker_search.py       # Phase 2: RPi3 검색 워커
-│   ├── worker_aggregate.py    # Phase 2: RPi4 집계 워커
+│   ├── app.py                 # Flask 진입점 (/, /video_feed, /recommend, /health)
+│   ├── camera.py              # 웹캠 캡처 + MJPEG 스트리밍 (백그라운드 스레드)
+│   ├── detector.py            # YOLOv8n person 감지 + 수직 분할 (tops/bottoms/shoes)
+│   ├── embedder.py            # CLIP ViT-B/32 이미지 임베딩 (CLS + visual_projection)
+│   ├── text_encoder.py        # ko-sroberta Mean Pooling 한국어 텍스트 임베딩
+│   ├── searcher.py            # FAISS 유사도 검색 (카테고리 필터, over-fetch)
+│   ├── reranker.py            # 텍스트 리랭킹 + HSV 색상 호환성 점수 + 팔레트 추출
+│   ├── recommender.py         # 통합 파이프라인 (카테고리별 검색 → 전체 Top-3)
 │   └── templates/
 │       └── index.html         # 웹 UI
 ├── data/
 │   ├── musinsa_db/            # 무신사 의류 이미지 1,000장 + metadata.json
 │   └── faiss_index/           # 사전 빌드된 FAISS 인덱스 + 스타일 벡터
 ├── models/
-│   ├── yolov8n.onnx
-│   ├── clip_image_encoder.onnx
-│   └── ko_sroberta/
+│   ├── yolov8n.onnx               # ~13MB
+│   ├── clip_image_encoder.onnx    # ~310MB
+│   ├── clip_preprocessor/         # visual_projection.npy + processor config
+│   └── ko_sroberta/               # ONNX + tokenizer (~460MB)
 ├── scripts/
+│   ├── setup_models.py        # ONNX 모델 다운로드·변환 (최초 1회)
 │   ├── crawl_musinsa.py       # 무신사 크롤러
 │   ├── build_image_index.py   # CLIP FAISS 인덱스 빌드
 │   └── build_style_vectors.py # ko-sroberta 스타일 벡터 빌드
@@ -130,25 +133,59 @@ RPi1 (카메라 + YOLO + Web UI)
 
 > 전체 실행 가이드는 [RUN.md](./RUN.md)를 참고하세요.
 
+### [보드 — RPi5] 앱 실행
+
 ```bash
 # 1. SSH 접속
 ssh willtek@10.56.130.185
+cd /home/willtek/work/Project/SmartFittingRoom
 
-# 2. 패키지 설치
+# 2. 가상환경 생성 및 활성화 (최초 1회)
+python3 -m venv env
+source env/bin/activate
+
+# 3. 패키지 설치
 pip install -r requirements.txt
 
-# 3. 데이터 준비 (로컬 맥에서 실행 후 RPi로 전송)
-python scripts/crawl_musinsa.py --category tops --count 250
-python scripts/build_image_index.py
-python scripts/build_style_vectors.py
-rsync -av ./data/ willtek@10.56.130.185:/home/willtek/project/data/
+# 4. models / data 다운로드 (구글 드라이브, 최초 1회)
+pip install gdown
+gdown --id 1MxdwuFzMfO3StJkBzegM7vFWaVP-T-gq -O models.zip
+gdown --id 1bpFxQGhlaTBVND8AIlBk7yfjgs8uacw8 -O data.zip
+unzip models.zip && rm models.zip
+unzip data.zip   && rm data.zip
 
-# 4. 앱 실행
+# 5. 앱 실행
 python src/app.py
 # → 브라우저에서 http://10.56.130.185:5000 접속
 
-# 5. 테스트 실행
+# 6. 테스트 실행
 pytest tests/ -v --tb=short 2>&1 | tee test-results/pytest_log.txt
+```
+
+### [로컬 — Mac] 데이터·모델 직접 빌드 시
+
+```bash
+cd SmartFittingRoom
+
+# 가상환경 생성 및 활성화
+python3 -m venv env
+source env/bin/activate
+
+# 패키지 설치
+pip install -r requirements_local.txt
+
+# ONNX 모델 변환 + 크롤링 + 인덱스 빌드 (인터넷 필요)
+python scripts/setup_models.py
+python scripts/crawl_musinsa.py --category tops    --count 250
+python scripts/crawl_musinsa.py --category bottoms --count 250
+python scripts/crawl_musinsa.py --category shoes   --count 250
+python scripts/crawl_musinsa.py --category outer   --count 250
+python scripts/build_image_index.py
+python scripts/build_style_vectors.py
+
+# 보드로 전송
+rsync -av ./data/   willtek@10.56.130.185:/home/willtek/work/Project/SmartFittingRoom/data/
+rsync -av ./models/ willtek@10.56.130.185:/home/willtek/work/Project/SmartFittingRoom/models/
 ```
 
 ---

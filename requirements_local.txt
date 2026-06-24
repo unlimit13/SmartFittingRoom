@@ -1,0 +1,24 @@
+# ============================================================
+# 로컬 환경 (Mac / x86-64 또는 Apple Silicon)
+# 용도: 모델 다운로드·ONNX 변환, 무신사 크롤링, FAISS 인덱스 빌드
+# 설치: pip install -r requirements_local.txt
+# ============================================================
+
+# --- 모델 변환 ---
+torch>=2.0.0                   # CLIP ViT-B/32 ONNX export
+ultralytics==8.2.100           # YOLOv8n ONNX export
+transformers==4.44.2           # CLIP / ko-sroberta 모델 로드
+optimum[onnxruntime]==1.22.0   # ko-sroberta → ONNX 변환
+open-clip-torch==2.26.1        # CLIP 모델 지원
+sentence-transformers==3.1.1   # ko-sroberta 모델 지원
+
+# --- 크롤링 ---
+requests==2.32.3
+beautifulsoup4==4.12.3
+
+# --- 인덱스 빌드 ---
+onnxruntime==1.19.2
+faiss-cpu==1.8.0
+numpy==1.26.4
+opencv-python==4.10.0.84       # 색상 추출 (K-means)
+Pillow==10.4.0

@@ -30,24 +30,30 @@
 ```
 [웹캠]
   ↓
-[YOLOv8n ONNX] — 상체/하체/신발 영역 감지 및 크롭
-  ↓                              ↓
-[CLIP ViT-B/32 ONNX]        [OpenCV K-means]
- 이미지 임베딩 (512-dim)       색상 팔레트 추출 (3색)
+[YOLOv8n ONNX] — person 감지(COCO class 0) → 수직 분할 비율로 크롭
+  tops: 0~45%, bottoms: 40~80%, shoes: 75~100%
+  ↓ (tops/bottoms/shoes 각 크롭 개별 처리)        ↓
+[CLIP ViT-B/32 ONNX]                         [OpenCV K-means]
+ CLS 토큰(768-dim) + visual_projection.npy    색상 팔레트 추출 (3색, BGR→RGB)
+ → L2 정규화 512-dim 벡터
+  ↓ (카테고리별 개별 검색, over-fetch k×3)
+[FAISS IndexFlatL2] — 카테고리 필터 → 후보 Top-50
   ↓
-[FAISS IndexFlatL2] — 카테고리 필터 → 후보 Top-50 추출
+[ko-sroberta ONNX + Mean Pooling] ← [한국어 텍스트 입력]
+ L2 정규화 768-dim 벡터 ↔ 상품 스타일 벡터(style_vectors.npy) 내적
   ↓
-[ko-sroberta ONNX] ← [한국어 텍스트 입력]
- 텍스트 임베딩 ↔ 상품 스타일 벡터 비교 → 리랭킹
+[Reranker] — α×clip_sim + β×text_sim + γ×color_compat
+  텍스트 있음: α=0.4, β=0.4, γ=0.2
+  텍스트 없음: α=0.6, β=0.0, γ=0.4
+  카테고리당 top-1 추출 → 전체 합산 정렬 → 최종 Top-3
   ↓
-[색상 호환성 점수 적용] → 최종 Top-3
-  ↓
-[Flask 웹 앱] — MJPEG 스트리밍 + 텍스트 입력창 + 추천 패널
+[Flask 웹 앱] — MJPEG 스트리밍 + 추천 JSON + base64 QR코드
 ```
 
 **2단계 검색 구조:**
-- 1단계 (시각): CLIP 이미지 임베딩 → FAISS로 후보 50개 추출 (이미지↔이미지)
-- 2단계 (텍스트): ko-sroberta로 한국어 입력 인코딩 → 상품 스타일 벡터와 유사도 비교 → 리랭킹 (텍스트↔텍스트)
+- 1단계 (시각): CLIP 이미지 임베딩 → FAISS로 카테고리당 후보 50개 추출 (이미지↔이미지)
+- 2단계 (텍스트): ko-sroberta Mean Pooling으로 한국어 입력 인코딩 → 사전 빌드된 스타일 벡터와 내적 → 리랭킹 (텍스트↔텍스트)
+- 카테고리별 top-1 선정 후 전체 정렬하여 top-3 반환
 
 ### 사용 보드
 
@@ -57,14 +63,15 @@
 
 | 역할 | 선택 | 비고 |
 |---|---|---|
-| 의류 감지 | YOLOv8n (ONNX) | aarch64 지원, ~10-15 FPS 가능 |
-| 이미지 임베딩 | CLIP ViT-B/32 (ONNX) | 512-dim 벡터, 추론 ~300ms |
-| 한국어 텍스트 임베딩 | `jhgan/ko-sroberta-multitask` (ONNX) | 768-dim 벡터, 추론 ~200ms |
-| 유사도 검색 | FAISS IndexFlatL2 | CPU 전용, 1000장 기준 <5ms |
-| 색상 분석 | OpenCV K-means | 외부 모델 불필요 |
-| 웹 서버 | Flask | MJPEG 스트리밍 + REST API |
-| QR코드 생성 | `qrcode` 라이브러리 | 무신사 상품 URL 연결 |
-| 테스트 | pytest | 자동화 테스트 7종 |
+| 의류 감지 | YOLOv8n (ONNX) | COCO person class 0 감지 + 수직 분할 (tops/bottoms/shoes) |
+| 이미지 임베딩 | CLIP ViT-B/32 (ONNX) | CLS 토큰(768-dim) × visual_projection.npy → 512-dim, L2 정규화 |
+| 한국어 텍스트 임베딩 | `jhgan/ko-sroberta-multitask` (ONNX) | Mean Pooling → 768-dim, L2 정규화, 추론 ~200ms |
+| 유사도 검색 | FAISS IndexFlatL2 | CPU 전용, over-fetch(k×3) 후 카테고리 필터 |
+| 색상 분석 | OpenCV K-means (BGR) | k=3, 빈도순 정렬 → #RRGGBB hex 반환 |
+| 색상 호환성 | HSV 규칙 기반 | 유사색(±30°)=1.0, 보색(150~210°)=0.6, 무채색=0.8, 기타=0.4 |
+| 웹 서버 | Flask | MJPEG 스트리밍 + REST API + base64 annotated frame |
+| QR코드 생성 | `qrcode` 라이브러리 | PNG base64로 JSON에 포함 |
+| 테스트 | pytest | 자동화 테스트 7종 (모델 없을 시 skip 처리) |
 
 ### 추론 시간 예측 (RPi5 기준)
 
@@ -82,14 +89,14 @@
 ```
 project/
 ├── src/
-│   ├── app.py              # Flask 진입점, 라우팅
-│   ├── camera.py           # 웹캠 캡처 + MJPEG 스트리밍
-│   ├── detector.py         # YOLOv8n ONNX 추론
-│   ├── embedder.py         # CLIP ViT-B/32 ONNX 이미지 임베딩
-│   ├── text_encoder.py     # ko-sroberta ONNX 한국어 텍스트 임베딩
-│   ├── searcher.py         # FAISS 검색 (1단계 시각 검색)
-│   ├── reranker.py         # 텍스트 리랭킹 (2단계) + 색상 호환성 점수
-│   ├── recommender.py      # 1단계+2단계 통합 코디 완성 로직
+│   ├── app.py              # Flask 진입점, 라우팅 (/, /video_feed, /recommend, /health)
+│   ├── camera.py           # 웹캠 캡처 백그라운드 스레드 + MJPEG 스트리밍 (FPS 오버레이)
+│   ├── detector.py         # YOLOv8n ONNX: person 감지 + 수직 분할 → crops dict
+│   ├── embedder.py         # CLIP ViT-B/32 ONNX: CLS 토큰 + visual_projection → 512-dim
+│   ├── text_encoder.py     # ko-sroberta ONNX: Mean Pooling → 768-dim L2 정규화
+│   ├── searcher.py         # FAISS 검색 (over-fetch × 3, 카테고리 필터)
+│   ├── reranker.py         # 리랭킹 + HSV 색상 호환성 + 팔레트 추출 (extract_palette)
+│   ├── recommender.py      # 통합 파이프라인: 카테고리별 검색 → 합산 top-3
 │   └── templates/
 │       └── index.html      # 웹 UI (카메라 피드 + 텍스트 입력 + 추천 패널)
 ├── data/
@@ -227,7 +234,9 @@ HSV 색공간 기반 규칙:
 
 ---
 
-## Phase 2: 분산 Edge AI 파이프라인
+## Phase 2: 분산 Edge AI 파이프라인 (계획됨 — 미구현)
+
+> **현재 상태**: Phase 1 단일 RPi 파이프라인 완성. Phase 2 워커 서버는 미구현.
 
 ### 역할 분담
 
@@ -251,13 +260,13 @@ RPi4: 색상 호환성 최종 점수 → Top-3 결과 → RPi1에 반환
 
 시간 여유 시 ZeroMQ(PUSH/PULL 패턴)로 교체해 지연 감소.
 
-### Phase 2 디렉토리 추가
+### Phase 2 디렉토리 추가 (미구현)
 
 ```
 src/
-├── worker_embed.py       # RPi2용 — CLIP 이미지 + ko-sroberta 텍스트 임베딩 워커
-├── worker_search.py      # RPi3용 — FAISS 검색 + 텍스트 리랭킹 워커
-└── worker_aggregate.py   # RPi4용 — 색상 호환성 + 결과 집계 서버
+├── worker_embed.py       # RPi2용 — CLIP 이미지 + ko-sroberta 텍스트 임베딩 워커 (미구현)
+├── worker_search.py      # RPi3용 — FAISS 검색 + 텍스트 리랭킹 워커 (미구현)
+└── worker_aggregate.py   # RPi4용 — 색상 호환성 + 결과 집계 서버 (미구현)
 ```
 
 ---
@@ -305,7 +314,7 @@ src/
 
 ## 산출물 체크리스트 (output_guide.md 기준)
 
-- [ ] `요구사항_명세서.md` — R-01~R-09 + 검증 기준 + 시연 타임스탬프
+- [x] `요구사항_명세서.md` — R-01~R-11 + 검증 기준 + 시연 타임스탬프 (`deliverables/요구사항명세서.md`)
 - [ ] `결과보고서.pdf/.pptx` — 설계·구현·결과 정리
 - [ ] `결과파일.zip` — src/ + tests/ + test-results/ + README.md + RUN.md + requirements.txt + .git/
 - [ ] `시연영상.mp4` — 아래 타임스탬프 기준 녹화
