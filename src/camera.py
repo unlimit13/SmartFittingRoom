@@ -35,22 +35,6 @@ class Camera:
         with self._lock:
             return self._frame.copy() if self._frame is not None else None
 
-    def generate_frames(self):
-        """MJPEG generator for Flask streaming."""
-        while True:
-            frame = self.get_frame()
-            if frame is None:
-                continue
-            cv2.putText(
-                frame, f"FPS: {self._fps:.1f}",
-                (8, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2,
-            )
-            _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
-            yield (
-                b"--frame\r\n"
-                b"Content-Type: image/jpeg\r\n\r\n" + buf.tobytes() + b"\r\n"
-            )
-
     def stop(self):
         self._running = False
         self._cap.release()
