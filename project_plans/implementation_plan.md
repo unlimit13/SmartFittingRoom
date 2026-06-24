@@ -101,21 +101,22 @@ project/
 │       └── index.html      # 웹 UI (카메라 피드 + 텍스트 입력 + 추천 패널)
 ├── data/
 │   ├── musinsa_db/
-│   │   ├── tops/           # 상의 이미지 ~250장
-│   │   ├── bottoms/        # 하의 이미지 ~250장
-│   │   ├── shoes/          # 신발 이미지 ~250장
-│   │   ├── outer/          # 아우터 이미지 ~250장
-│   │   └── metadata.json   # product_id, url, category, dominant_color, style_tags (Korean)
+│   │   ├── tops/           # 상의 이미지 (convert_musinsa_out.py 생성)
+│   │   ├── bottoms/        # 하의 이미지
+│   │   ├── shoes/          # 신발 이미지
+│   │   └── metadata.json   # product_id, url, category, image_path, name, style_text, dominant_color
 │   └── faiss_index/
 │       ├── index.bin       # CLIP 이미지 벡터 기반 FAISS 인덱스
 │       └── style_vectors.npy  # 상품별 ko-sroberta 스타일 벡터 (사전 빌드)
+├── musinsa_out/
+│   └── musinsa_db/         # 새 크롤러 원본 출력 (snap_id 기반 코디 세트)
 ├── models/
 │   ├── yolov8n.onnx
 │   ├── clip_image_encoder.onnx
 │   ├── clip_preprocessor/      # CLIP 전처리 설정
 │   └── ko_sroberta/            # ko-sroberta ONNX 모델 파일
 ├── scripts/
-│   ├── crawl_musinsa.py        # 무신사 크롤러 (이미지 + 상품명/태그 수집)
+│   ├── convert_musinsa_out.py  # musinsa_out 스냅 데이터 → data/musinsa_db 변환
 │   ├── build_image_index.py    # CLIP 이미지 임베딩 → FAISS 인덱스 빌드
 │   └── build_style_vectors.py  # 상품 태그 → ko-sroberta 스타일 벡터 빌드
 ├── tests/
@@ -134,27 +135,40 @@ project/
 
 ### 데이터 준비 (사전 작업, 로컬 맥에서 실행)
 
-크롤링 시 이미지 외에 **한국어 상품명 + 스타일 태그**를 함께 수집한다.
-이 텍스트가 ko-sroberta 스타일 벡터의 원본이 된다.
+새 크롤러가 `musinsa_out/musinsa_db/result.json` (snap_id 기반 코디 세트)을 생성하면,
+`convert_musinsa_out.py`로 기존 플랫 상품 목록 형식으로 변환한다.
+snap 단위 해시태그가 각 상품의 `style_text`로 활용된다.
 
+**원본 데이터 스키마** (`musinsa_out/musinsa_db/result.json`):
 ```json
-// metadata.json 항목 예시
 {
-  "product_id": "musinsa_12345",
+  "snap_id": "1518836080194369513",
+  "description": "스타일링 설명 (한국어)",
+  "hashtags": ["dailylook", "ootd", "데일리룩", ...],
+  "items_by_slot": {
+    "상의": [{ "goodsNo": "6237058", "name": "린넨 니트", "saved_path": "images/상의/...", ... }],
+    "하의": [...],
+    "신발": [...]
+  }
+}
+```
+
+**변환 후 metadata.json 스키마** (`data/musinsa_db/metadata.json`):
+```json
+{
+  "product_id": "musinsa_6237058",
   "category": "tops",
-  "url": "https://www.musinsa.com/products/12345",
-  "image_path": "tops/musinsa_12345.jpg",
-  "dominant_color": "#3D6B9F",
-  "style_text": "오버사이즈 린넨 셔츠, 캐주얼, 데이트룩, 여름, 밝은색"
+  "url": "https://www.musinsa.com/products/6237058",
+  "image_path": "tops/musinsa_6237058.jpg",
+  "name": "린넨 스카시 카라 반팔 니트 OLIVE",
+  "style_text": "린넨 스카시 카라 반팔 니트 OLIVE, dailylook, ootd, 남자데일리룩, ...",
+  "dominant_color": "#3D6B9F"
 }
 ```
 
 ```bash
-# 1. 크롤링 — 이미지 + 상품명/태그 (로컬 맥)
-python scripts/crawl_musinsa.py --category tops --count 250
-python scripts/crawl_musinsa.py --category bottoms --count 250
-python scripts/crawl_musinsa.py --category shoes --count 250
-python scripts/crawl_musinsa.py --category outer --count 250
+# 1. musinsa_out 스냅 데이터 변환 (로컬 맥)
+python scripts/convert_musinsa_out.py
 
 # 2. CLIP 이미지 인덱스 빌드
 python scripts/build_image_index.py

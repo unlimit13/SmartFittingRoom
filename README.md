@@ -105,8 +105,10 @@ RPi1 (카메라 + YOLO + Web UI)
 │   └── templates/
 │       └── index.html         # 웹 UI
 ├── data/
-│   ├── musinsa_db/            # 무신사 의류 이미지 1,000장 + metadata.json
+│   ├── musinsa_db/            # 변환된 무신사 스냅 상품 이미지 + metadata.json
 │   └── faiss_index/           # 사전 빌드된 FAISS 인덱스 + 스타일 벡터
+├── musinsa_out/
+│   └── musinsa_db/            # 새 크롤러 원본 출력 (snap_id 기반 코디 세트)
 ├── models/
 │   ├── yolov8n.onnx               # ~13MB
 │   ├── clip_image_encoder.onnx    # ~310MB
@@ -114,7 +116,7 @@ RPi1 (카메라 + YOLO + Web UI)
 │   └── ko_sroberta/               # ONNX + tokenizer (~460MB)
 ├── scripts/
 │   ├── setup_models.py        # ONNX 모델 다운로드·변환 (최초 1회)
-│   ├── crawl_musinsa.py       # 무신사 크롤러
+│   ├── convert_musinsa_out.py # musinsa_out 스냅 데이터 → data/musinsa_db 변환
 │   ├── build_image_index.py   # CLIP FAISS 인덱스 빌드
 │   └── build_style_vectors.py # ko-sroberta 스타일 벡터 빌드
 ├── tests/                     # pytest 자동화 테스트
