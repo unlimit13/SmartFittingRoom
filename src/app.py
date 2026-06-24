@@ -127,6 +127,7 @@ def pose_poll():
 def recommend():
     body       = request.get_json(silent=True) or {}
     text_query = body.get("text_query", "")
+    anchor_category = body.get("anchor_category", "bottoms")
     use_camera = body.get("use_camera", True)
 
     if use_camera:
@@ -140,28 +141,17 @@ def recommend():
     _tops_result_url = None
     _person_url_future = _upload_executor.submit(tryon_mod.upload_frame, frame.copy())
 
-    t0     = time.time()
-    result = _recommender.recommend(frame, text_query=text_query)
+    t0 = time.time()
+    result = _recommender.recommend_outfit(frame, anchor_category, text_query=text_query)
     elapsed_ms = int((time.time() - t0) * 1000)
 
     _, buf = cv2.imencode(".jpg", result["annotated_frame"], [cv2.IMWRITE_JPEG_QUALITY, 70])
     annotated_b64 = base64.b64encode(buf).decode()
 
     return jsonify({
-        "detected":     result["detected"],
-        "palette":      result["palette"],
-        "results": [
-            {
-                "product_id":  r["product_id"],
-                "category":    r["category"],
-                "name":        r.get("name", ""),
-                "url":         r["url"],
-                "image_path":  r.get("image_path", ""),
-                "final_score": round(r["final_score"], 4),
-                "qr_b64":      r["qr_b64"],
-            }
-            for r in result["results"]
-        ],
+        "detected":      result["detected"],
+        "palette":       result["palette"],
+        "outfits":       result["outfits"],
         "annotated_b64": annotated_b64,
         "elapsed_ms":    elapsed_ms,
     })

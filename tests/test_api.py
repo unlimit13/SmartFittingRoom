@@ -17,52 +17,39 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
 def _make_mock_recommender():
-    """Return a recommender that returns a deterministic fake result."""
-    fake_result = {
+    fake_outfit = {
         "detected": True,
         "annotated_frame": np.zeros((480, 640, 3), dtype=np.uint8),
         "palette": ["#3D6B9F", "#FFFFFF", "#000000"],
-        "results": [
+        "outfits": [
             {
-                "product_id": "musinsa_0001",
-                "category": "tops",
-                "name": "오버핏 린넨 셔츠",
-                "url": "https://www.musinsa.com/products/1",
-                "image_path": "tops/musinsa_0001.jpg",
-                "final_score": 0.82,
-                "qr_b64": base64.b64encode(b"fakepng").decode(),
+                "snap_id": "snap1", "anchor_score": 0.95,
+                "tops":    [{"product_id": "musinsa_001", "name": "오버핏 린넨 셔츠", "url": "https://www.musinsa.com/products/1", "image_path": "tops/musinsa_001.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
+                "bottoms": [{"product_id": "musinsa_002", "name": "슬림핏 청바지", "url": "https://www.musinsa.com/products/2", "image_path": "bottoms/musinsa_002.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
+                "shoes":   [{"product_id": "musinsa_003", "name": "화이트 스니커즈", "url": "https://www.musinsa.com/products/3", "image_path": "shoes/musinsa_003.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
             },
             {
-                "product_id": "musinsa_0002",
-                "category": "bottoms",
-                "name": "슬림핏 청바지",
-                "url": "https://www.musinsa.com/products/2",
-                "image_path": "bottoms/musinsa_0002.jpg",
-                "final_score": 0.75,
-                "qr_b64": base64.b64encode(b"fakepng").decode(),
+                "snap_id": "snap2", "anchor_score": 0.88,
+                "tops":    [{"product_id": "musinsa_004", "name": "니트", "url": "https://www.musinsa.com/products/4", "image_path": "tops/musinsa_004.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
+                "bottoms": [{"product_id": "musinsa_005", "name": "슬랙스", "url": "https://www.musinsa.com/products/5", "image_path": "bottoms/musinsa_005.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
+                "shoes":   [{"product_id": "musinsa_006", "name": "로퍼", "url": "https://www.musinsa.com/products/6", "image_path": "shoes/musinsa_006.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
             },
             {
-                "product_id": "musinsa_0003",
-                "category": "shoes",
-                "name": "화이트 스니커즈",
-                "url": "https://www.musinsa.com/products/3",
-                "image_path": "shoes/musinsa_0003.jpg",
-                "final_score": 0.71,
-                "qr_b64": base64.b64encode(b"fakepng").decode(),
+                "snap_id": "snap3", "anchor_score": 0.80,
+                "tops":    [{"product_id": "musinsa_007", "name": "후드티", "url": "https://www.musinsa.com/products/7", "image_path": "tops/musinsa_007.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
+                "bottoms": [{"product_id": "musinsa_008", "name": "조거팬츠", "url": "https://www.musinsa.com/products/8", "image_path": "bottoms/musinsa_008.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
+                "shoes":   [{"product_id": "musinsa_009", "name": "운동화", "url": "https://www.musinsa.com/products/9", "image_path": "shoes/musinsa_009.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
             },
         ],
     }
-
     rec = mock.MagicMock()
-    rec.recommend.return_value = fake_result
+    rec.recommend_outfit.return_value = fake_outfit
     return rec
 
 
 @pytest.fixture
 def client():
     """Flask test client with mocked camera and recommender."""
-    import app as app_module
-
     fake_frame = np.zeros((480, 640, 3), dtype=np.uint8)
     mock_camera = mock.MagicMock()
     mock_camera.get_frame.return_value = fake_frame
@@ -71,8 +58,17 @@ def client():
 
     mock_rec = _make_mock_recommender()
 
-    with mock.patch.object(app_module, "_camera", mock_camera), \
-         mock.patch.object(app_module, "_recommender", mock_rec):
+    # Patch Camera and Recommender constructors before app module-level code runs.
+    # app.py instantiates _camera = Camera() and _recommender = Recommender() at import
+    # time, so we must intercept both before import (or module reload).
+    import sys
+
+    # Remove cached module so we get a fresh import with our patches applied.
+    sys.modules.pop("app", None)
+
+    with mock.patch("camera.Camera", return_value=mock_camera), \
+         mock.patch("recommender.Recommender", return_value=mock_rec):
+        import app as app_module
         app_module.app.config["TESTING"] = True
         with app_module.app.test_client() as c:
             yield c
@@ -106,7 +102,7 @@ def test_recommend_result_structure(client):
         content_type="application/json",
     )
     data = resp.get_json()
-    assert "results" in data
+    assert "outfits" in data
     assert "palette" in data
     assert "detected" in data
     assert "elapsed_ms" in data
@@ -119,19 +115,35 @@ def test_recommend_top3(client):
         content_type="application/json",
     )
     data = resp.get_json()
-    assert len(data["results"]) == 3
+    assert len(data["outfits"]) == 3
 
 
-def test_recommend_qr_present(client):
+def test_recommend_outfit_structure(client):
     resp = client.post(
         "/recommend",
         data=json.dumps({"text_query": "", "use_camera": True}),
         content_type="application/json",
     )
     data = resp.get_json()
-    for r in data["results"]:
-        assert "qr_b64" in r
-        assert len(r["qr_b64"]) > 0
+    for outfit in data["outfits"]:
+        assert "snap_id" in outfit
+        assert "anchor_score" in outfit
+        for slot in ("tops", "bottoms", "shoes"):
+            assert slot in outfit
+            for product in outfit[slot]:
+                assert "qr_b64" in product
+                assert len(product["qr_b64"]) > 0
+
+
+def test_recommend_anchor_category_default(client):
+    import app as app_module
+    client.post(
+        "/recommend",
+        data=json.dumps({"text_query": "", "use_camera": True}),
+        content_type="application/json",
+    )
+    call_args = app_module._recommender.recommend_outfit.call_args
+    assert call_args.args[1] == "bottoms"
 
 
 def test_recommend_response_time(client):

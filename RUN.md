@@ -137,16 +137,20 @@ models/
 └── ko_sroberta/model.onnx + tokenizer  (~460MB)
 ```
 
-### [로컬] Step 2: 무신사 데이터 크롤링
+### [로컬] Step 2: 무신사 스냅 데이터 변환
+
+새 크롤러가 `musinsa_out/musinsa_db/result.json`과 이미지를 생성한 이후 실행합니다.
 
 ```bash
-python scripts/crawl_musinsa.py --category tops    --count 250
-python scripts/crawl_musinsa.py --category bottoms --count 250
-python scripts/crawl_musinsa.py --category shoes   --count 250
-python scripts/crawl_musinsa.py --category outer   --count 250
+# snap 기반 크롤링 (musinsa_out/result.json + 이미지 생성)
+python crawl_musinsa.py
+python scripts/convert_musinsa_out.py
 ```
 
-생성 파일: `data/musinsa_db/{tops,bottoms,shoes,outer}/*.jpg` + `metadata.json`
+생성 파일: `data/musinsa_db/{tops,bottoms,shoes}/*.jpg|png` + `metadata.json`
+
+> **데이터 형식**: `musinsa_out/musinsa_db/result.json` (snap_id 기반 코디 세트) →
+> `data/musinsa_db/metadata.json` (상품별 플랫 목록)으로 변환됩니다.
 
 ### [로컬] Step 3: FAISS 인덱스 + 스타일 벡터 빌드
 
@@ -188,7 +192,7 @@ python src/app.py
 
 ## 6. 외부 서비스·자원
 
-- **인터넷 필요**: `scripts/setup_models.py` (HuggingFace), `scripts/crawl_musinsa.py` (무신사)
+- **인터넷 필요**: `scripts/setup_models.py` (HuggingFace), `crawl_musinsa.py` (무신사)
 - **모델 출처**:
   - YOLOv8n: Ultralytics (자동 다운로드)
   - CLIP ViT-B/32: `openai/clip-vit-base-patch32` (HuggingFace)

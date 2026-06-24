@@ -105,16 +105,19 @@ RPi1 (카메라 + YOLO + Web UI)
 │   └── templates/
 │       └── index.html         # 웹 UI
 ├── data/
-│   ├── musinsa_db/            # 무신사 의류 이미지 1,000장 + metadata.json
+│   ├── musinsa_db/            # 변환된 무신사 스냅 상품 이미지 + metadata.json
 │   └── faiss_index/           # 사전 빌드된 FAISS 인덱스 + 스타일 벡터
+├── musinsa_out/
+│   └── musinsa_db/            # 새 크롤러 원본 출력 (snap_id 기반 코디 세트)
 ├── models/
 │   ├── yolov8n.onnx               # ~13MB
 │   ├── clip_image_encoder.onnx    # ~310MB
 │   ├── clip_preprocessor/         # visual_projection.npy + processor config
 │   └── ko_sroberta/               # ONNX + tokenizer (~460MB)
+├── crawl_musinsa.py           # 무신사 snap 크롤러 (snap_id 단위 코디 세트 수집)
 ├── scripts/
 │   ├── setup_models.py        # ONNX 모델 다운로드·변환 (최초 1회)
-│   ├── crawl_musinsa.py       # 무신사 크롤러
+│   ├── convert_musinsa_out.py # musinsa_out → data/musinsa_db/ + snap_outfits.json
 │   ├── build_image_index.py   # CLIP FAISS 인덱스 빌드
 │   └── build_style_vectors.py # ko-sroberta 스타일 벡터 빌드
 ├── tests/                     # pytest 자동화 테스트
@@ -149,8 +152,8 @@ pip install -r requirements.txt
 
 # 4. models / data 다운로드 (구글 드라이브, 최초 1회)
 pip install gdown
-gdown 1MxdwuFzMfO3StJkBzegM7vFWaVP-T-gq -O models.zip
-gdown 1M4Job3wKHlb2mcWmFXqVgKvUEgb8ghEj -O data.zip
+gdown 1eJcoJdGNR4G3x8MMlnQXskF_hjQdIAGs -O models.zip
+gdown 1cNytfQV3mA8MGTsQgqnRI2anwGFFsdir -O data.zip
 unzip models.zip && rm models.zip
 unzip data.zip   && rm data.zip
 
@@ -176,10 +179,8 @@ pip install -r requirements_local.txt
 
 # ONNX 모델 변환 + 크롤링 + 인덱스 빌드 (인터넷 필요)
 python scripts/setup_models.py
-python scripts/crawl_musinsa.py --category tops    --count 250
-python scripts/crawl_musinsa.py --category bottoms --count 250
-python scripts/crawl_musinsa.py --category shoes   --count 250
-python scripts/crawl_musinsa.py --category outer   --count 250
+python crawl_musinsa.py                  # snap 기반 크롤링 (musinsa_out/ 생성)
+python scripts/convert_musinsa_out.py    # snap → data/musinsa_db/ + snap_outfits.json
 python scripts/build_image_index.py
 python scripts/build_style_vectors.py
 

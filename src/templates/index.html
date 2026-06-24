@@ -304,9 +304,9 @@ function clearWristHover() {
 
 function fireWrist(id) {
   clearWristHover();
-  if (id === 'btn-tops-tryon')    { if (!_busy) { _busy = true; doTryon(_tryonTop, null); } }
+  if (id === 'btn-tops-tryon')         { if (!_busy) { _busy = true; doTryon(_tryonTop, null); } }
   else if (id === 'btn-bottoms-tryon') { if (!_busy) { _busy = true; doTryon(null, _tryonBottom); } }
-  else if (id === 'btn-cancel')   doCancel();
+  else if (id === 'btn-cancel')        doCancel();
 }
 
 // ── Countdown ─────────────────────────────────────────────────────────
@@ -335,8 +335,8 @@ function runCountdown() {
 // ── 추천 ─────────────────────────────────────────────────────────────
 async function doRecommend() {
   _tryonTop = null; _tryonBottom = null;
-  btnCancel.style.display = 'none';
-  btnTopsT.style.display = 'none';
+  btnCancel.style.display   = 'none';
+  btnTopsT.style.display    = 'none';
   btnBottomsT.style.display = 'none';
 
   await runCountdown();
@@ -352,22 +352,21 @@ async function doRecommend() {
 
     showCapture('data:image/jpeg;base64,' + data.annotated_b64, '📸 감지 결과');
 
-    const items = data.results || [];
-    clothesGrid.innerHTML = items.length
-      ? items.map(r => `
-          <div class="clothes-item">
-            ${r.image_path
-              ? `<img src="/product_image/${r.image_path}" alt="">`
-              : '<div class="clothes-empty">?</div>'}
-          </div>`).join('')
-      : `<div class="clothes-item"><div class="clothes-empty">👕</div></div>
-         <div class="clothes-item"><div class="clothes-empty">👖</div></div>
-         <div class="clothes-item"><div class="clothes-empty">👟</div></div>`;
+    const outfits    = data.outfits || [];
+    const first      = outfits[0] || {};
+    const topItem    = (first.tops    || [])[0] || null;
+    const bottomItem = (first.bottoms || [])[0] || null;
+    const shoeItem   = (first.shoes   || [])[0] || null;
 
-    for (const r of items) {
-      if (!_tryonTop    && r.category === 'tops'    && r.image_path) _tryonTop    = r.image_path;
-      if (!_tryonBottom && r.category === 'bottoms' && r.image_path) _tryonBottom = r.image_path;
-    }
+    clothesGrid.innerHTML = [
+      topItem    ? `<img src="/product_image/${topItem.image_path}"    alt="">` : '<div class="clothes-empty">👕</div>',
+      bottomItem ? `<img src="/product_image/${bottomItem.image_path}" alt="">` : '<div class="clothes-empty">👖</div>',
+      shoeItem   ? `<img src="/product_image/${shoeItem.image_path}"   alt="">` : '<div class="clothes-empty">👟</div>',
+    ].map(inner => `<div class="clothes-item">${inner}</div>`).join('');
+
+    if (topItem    && topItem.image_path)    _tryonTop    = topItem.image_path;
+    if (bottomItem && bottomItem.image_path) _tryonBottom = bottomItem.image_path;
+
     if (_tryonTop)    btnTopsT.style.display    = 'flex';
     if (_tryonBottom) btnBottomsT.style.display = 'flex';
     btnCancel.style.display = 'flex';
