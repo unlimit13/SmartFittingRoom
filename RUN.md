@@ -113,7 +113,7 @@ gdown 1eJcoJdGNR4G3x8MMlnQXskF_hjQdIAGs -O models.zip
 unzip models.zip && rm models.zip
 
 # data 다운로드 (~200MB)
-gdown 1cNytfQV3mA8MGTsQgqnRI2anwGFFsdir -O data.zip
+gdown 10HAKEtpDnk1nsX11xxkwPIVXeYmK_fmm -O data.zip
 unzip data.zip && rm data.zip
 ```
 
