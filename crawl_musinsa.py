@@ -40,7 +40,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 # ----------------------------------------------------------------------
 PROFILE_ID = "1234627203913810064"
 PAGE_SIZE = 36
-MAX_SNAPS = 20000
+MAX_SNAPS = 60000
 REQUEST_DELAY = 0.3            # 워커당 요청 간 딜레이(초)
 WORKERS = 8                   # 동시 처리 프로세스 (차단 시 줄이기)
 MIN_SLOTS = 3                 # 상의/하의/신발 3슬롯 모두 있어야 코디 채택(각 1장 → 코디당 3장)
@@ -377,12 +377,22 @@ def main():
         except Exception:
             results, done = [], set()
 
-    # 1) 스냅 id 수집
-    snap_ids, page = [], 1
+    # 1) 스냅 id 수집 (피드가 동나거나 에러나면 그때까지 모은 것까지만 사용)
+    snap_ids, page, fails = [], 1, 0
     with tqdm(total=MAX_SNAPS, desc="스냅 목록 수집", unit="snap") as pbar:
         while len(snap_ids) < MAX_SNAPS:
-            stubs = extract_snap_list(fetch_feed(page))
-            if not stubs:
+            try:
+                stubs = extract_snap_list(fetch_feed(page))
+            except Exception as e:
+                fails += 1
+                tqdm.write(f"[feed] page {page} 오류({fails}/3): {e}")
+                if fails >= 3:                      # 연속 실패 → 모은 것까지만
+                    tqdm.write("[feed] 반복 실패로 목록 수집 종료")
+                    break
+                time.sleep(2 * fails)               # 백오프 후 같은 페이지 재시도
+                continue
+            fails = 0
+            if not stubs:                           # 더 이상 스냅 없음 → 정상 종료
                 break
             before = len(snap_ids)
             snap_ids.extend(s.get("id") for s in stubs if s.get("id"))
@@ -391,6 +401,7 @@ def main():
             pbar.update(len(snap_ids) - before)
             page += 1
             time.sleep(REQUEST_DELAY)
+    print(f"수집된 스냅 id: {len(snap_ids)}개 (목표 {MAX_SNAPS})")
 
     pending = [s for s in snap_ids if s not in done]
 
