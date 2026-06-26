@@ -21,14 +21,17 @@ DevOps 8개 기준을 모두 충족합니다.
 ```
 flask==3.0.3
 opencv-python==4.10.0.84
-onnxruntime==1.19.2
+onnxruntime==1.27.0
 faiss-cpu==1.8.0
 numpy==1.26.4
 Pillow==10.4.0
 qrcode==7.4.2
 pytest==8.3.3
 requests==2.32.3
-transformers==4.44.2
+transformers==4.44.2   # AutoTokenizer (ko-sroberta 추론 시 필요)
+fal_client==1.0.0
+mediapipe==0.10.18
+ai-edge-litert==2.1.5
 ```
 
 **`requirements_local.txt` (로컬):**
@@ -184,7 +187,13 @@ python src/app.py
 
 ## 5. 환경 변수·설정 파일
 
-별도 환경 변수 불필요. 모든 경로는 프로젝트 루트 기준 상대 경로로 자동 설정됩니다.
+모든 경로는 프로젝트 루트 기준 상대 경로로 자동 설정됩니다.
+
+**가상 피팅(Virtual Try-On) 사용 시 필요:**
+```bash
+export FAL_KEY=your_fal_api_key_here
+```
+`FAL_KEY` 미설정 시 `/tryon` 엔드포인트는 동작하지 않으나, 추천 파이프라인(YOLO·CLIP·FAISS)은 정상 동작합니다.
 
 카메라 인덱스를 변경하려면 `src/camera.py`의 `Camera(device_index=0)` 인자를 수정하세요.
 
@@ -197,7 +206,9 @@ python src/app.py
   - YOLOv8n: Ultralytics (자동 다운로드)
   - CLIP ViT-B/32: `openai/clip-vit-base-patch32` (HuggingFace)
   - ko-sroberta: `jhgan/ko-sroberta-multitask` (HuggingFace)
-- **앱 실행 중 (보드)**: 외부 API 호출 없음, 완전 On-Device
+- **앱 실행 중 (보드)**:
+  - AI 추론 파이프라인(YOLO·CLIP·FAISS·ko-sroberta): 외부 API 호출 없음, 완전 On-Device
+  - **가상 피팅 (선택적)**: `fal-ai/fashn/tryon v1.6` 외부 API 사용 — `FAL_KEY` 환경 변수 필요
 
 ---
 
