@@ -76,3 +76,15 @@ def test_search_category_filter():
         results = s.search(query, category=cat, top_k=10)
         for r in results:
             assert r["category"] == cat, f"Expected {cat}, got {r['category']}"
+
+
+@pytest.mark.skipif(not DATA_READY, reason="FAISS index not available")
+def test_search_gender_filter():
+    from searcher import Searcher
+    s = Searcher()
+    query = np.random.rand(512).astype(np.float32)
+    query /= np.linalg.norm(query)
+    for gender in ("남", "여"):
+        results = s.search(query, gender=gender, top_k=10)
+        for r in results:
+            assert r.get("gender") == gender, f"Expected {gender}, got {r.get('gender')}"

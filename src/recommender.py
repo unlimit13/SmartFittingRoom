@@ -49,7 +49,7 @@ class Recommender:
                 })
         return result
 
-    def recommend_outfit(self, frame, anchor_category: str, text_query: str = "") -> dict:
+    def recommend_outfit(self, frame, anchor_category: str, text_query: str = "", gender: str = "") -> dict:
         detection = self.detector.detect(frame)
         annotated = detection["annotated"]
         crops = detection["crops"]
@@ -64,7 +64,7 @@ class Recommender:
         text_vec = self.text_encoder.encode(text_query) if text_query.strip() else None
 
         def get_items(category, n=1):
-            candidates = self.searcher.search(img_vec, category=category, top_k=20)
+            candidates = self.searcher.search(img_vec, category=category, gender=gender or None, top_k=20)
             ranked = self.reranker.rerank(candidates, text_vec, palette, top_n=n)
             return [
                 {

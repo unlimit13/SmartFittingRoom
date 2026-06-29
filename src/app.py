@@ -157,7 +157,7 @@ def recommend():
     _person_url_future = _upload_executor.submit(tryon_mod.upload_frame, frame.copy())
 
     t0 = time.time()
-    result = _recommender.recommend_outfit(frame, anchor_category, text_query=text_query)
+    result = _recommender.recommend_outfit(frame, anchor_category, text_query=text_query, gender=gender)
     elapsed_ms = int((time.time() - t0) * 1000)
 
     if not result["detected"]:

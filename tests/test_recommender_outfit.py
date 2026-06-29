@@ -18,15 +18,15 @@ SNAP_OUTFITS = {
     "snap3": {"tops": ["musinsa_007"], "bottoms": ["musinsa_008"], "shoes": ["musinsa_009"]},
 }
 META = {
-    "musinsa_001": {"product_id": "musinsa_001", "name": "셔츠", "url": "https://musinsa.com/1", "image_path": "tops/musinsa_001.jpg"},
-    "musinsa_002": {"product_id": "musinsa_002", "name": "청바지", "url": "https://musinsa.com/2", "image_path": "bottoms/musinsa_002.jpg"},
-    "musinsa_003": {"product_id": "musinsa_003", "name": "스니커즈", "url": "https://musinsa.com/3", "image_path": "shoes/musinsa_003.jpg"},
-    "musinsa_004": {"product_id": "musinsa_004", "name": "니트", "url": "https://musinsa.com/4", "image_path": "tops/musinsa_004.jpg"},
-    "musinsa_005": {"product_id": "musinsa_005", "name": "슬랙스", "url": "https://musinsa.com/5", "image_path": "bottoms/musinsa_005.jpg"},
-    "musinsa_006": {"product_id": "musinsa_006", "name": "로퍼", "url": "https://musinsa.com/6", "image_path": "shoes/musinsa_006.jpg"},
-    "musinsa_007": {"product_id": "musinsa_007", "name": "후드티", "url": "https://musinsa.com/7", "image_path": "tops/musinsa_007.jpg"},
-    "musinsa_008": {"product_id": "musinsa_008", "name": "조거팬츠", "url": "https://musinsa.com/8", "image_path": "bottoms/musinsa_008.jpg"},
-    "musinsa_009": {"product_id": "musinsa_009", "name": "운동화", "url": "https://musinsa.com/9", "image_path": "shoes/musinsa_009.jpg"},
+    "musinsa_001": {"product_id": "musinsa_001", "gender": "남", "name": "셔츠", "url": "https://musinsa.com/1", "image_path": "tops/musinsa_001.jpg"},
+    "musinsa_002": {"product_id": "musinsa_002", "gender": "남", "name": "청바지", "url": "https://musinsa.com/2", "image_path": "bottoms/musinsa_002.jpg"},
+    "musinsa_003": {"product_id": "musinsa_003", "gender": "남", "name": "스니커즈", "url": "https://musinsa.com/3", "image_path": "shoes/musinsa_003.jpg"},
+    "musinsa_004": {"product_id": "musinsa_004", "gender": "남", "name": "니트", "url": "https://musinsa.com/4", "image_path": "tops/musinsa_004.jpg"},
+    "musinsa_005": {"product_id": "musinsa_005", "gender": "남", "name": "슬랙스", "url": "https://musinsa.com/5", "image_path": "bottoms/musinsa_005.jpg"},
+    "musinsa_006": {"product_id": "musinsa_006", "gender": "남", "name": "로퍼", "url": "https://musinsa.com/6", "image_path": "shoes/musinsa_006.jpg"},
+    "musinsa_007": {"product_id": "musinsa_007", "gender": "남", "name": "후드티", "url": "https://musinsa.com/7", "image_path": "tops/musinsa_007.jpg"},
+    "musinsa_008": {"product_id": "musinsa_008", "gender": "남", "name": "조거팬츠", "url": "https://musinsa.com/8", "image_path": "bottoms/musinsa_008.jpg"},
+    "musinsa_009": {"product_id": "musinsa_009", "gender": "남", "name": "운동화", "url": "https://musinsa.com/9", "image_path": "shoes/musinsa_009.jpg"},
 }
 CANDIDATES = [
     {**META["musinsa_002"], "category": "bottoms", "snap_id": "snap1", "score": 0.95},
@@ -108,3 +108,16 @@ def test_recommend_outfit_fallback_when_no_crop(rec):
     result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
     assert "outfits" in result
     rec.embedder.embed.assert_called_once_with(DUMMY_FRAME)
+
+
+def test_recommend_outfit_passes_gender_to_searcher(rec):
+    rec.recommend_outfit(DUMMY_FRAME, "bottoms", gender="남")
+    for call in rec.searcher.search.call_args_list:
+        assert call.kwargs.get("gender") == "남" or call.args[1:2] == ("남",), \
+            f"gender='남' not passed to searcher.search: {call}"
+
+
+def test_recommend_outfit_no_gender_passes_none_to_searcher(rec):
+    rec.recommend_outfit(DUMMY_FRAME, "bottoms")
+    for call in rec.searcher.search.call_args_list:
+        assert call.kwargs.get("gender") is None

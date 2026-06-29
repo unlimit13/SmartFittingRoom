@@ -24,13 +24,13 @@ class Searcher:
             metadata = json.load(f)
         self._meta = {item["product_id"]: item for item in metadata}
 
-    def search(self, query_vec: np.ndarray, category: str | None = None, top_k: int = 50) -> list[dict]:
+    def search(self, query_vec: np.ndarray, category: str | None = None, gender: str | None = None, top_k: int = 50) -> list[dict]:
         """
         Returns list of up to top_k dicts:
-          {product_id, category, score (cosine similarity), url, image_path, name, style_text, dominant_color}
+          {product_id, category, gender, score (cosine similarity), url, image_path, name, style_text, dominant_color}
         """
         q = query_vec.astype(np.float32).reshape(1, -1)
-        k = min(top_k * 3, self._index.ntotal)  # over-fetch for category filtering
+        k = min(top_k * 3, self._index.ntotal)  # over-fetch for category/gender filtering
         scores, indices = self._index.search(q, k)
 
         results = []
@@ -42,6 +42,8 @@ class Searcher:
             if item is None:
                 continue
             if category and item["category"] != category:
+                continue
+            if gender and item.get("gender") != gender:
                 continue
             results.append({**item, "score": float(score)})
             if len(results) >= top_k:
