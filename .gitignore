@@ -45,3 +45,9 @@ build/
 .jpg
 musinsa_out/
 musinsa_out.zip
+
+# 온디바이스 VTON (Mobile-VTON) — 런타임 스크래치 / 가중치 (checkpoint는 gdown 별도 배포)
+src/ondevice_vton/_vton_run/
+src/ondevice_vton/logs/
+src/ondevice_vton/output/
+src/ondevice_vton/checkpoint/

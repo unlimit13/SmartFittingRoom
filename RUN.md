@@ -16,6 +16,7 @@ DevOps 8개 기준을 모두 충족합니다.
 |---|---|---|
 | `requirements.txt` | Raspberry Pi 5 (보드) | 앱 실행 + ONNX 추론 |
 | `requirements_local.txt` | Mac (로컬) | 모델 변환, 크롤링, 인덱스 빌드 |
+| `requirements_vton.txt` | RPi5 클러스터 (선택) | 온디바이스 가상 피팅(Mobile-VTON). 별도 venv — 보드 `transformers`와 버전 충돌하므로 분리 |
 
 **`requirements.txt` (보드):**
 ```
@@ -189,11 +190,21 @@ python src/app.py
 
 모든 경로는 프로젝트 루트 기준 상대 경로로 자동 설정됩니다.
 
-**가상 피팅(Virtual Try-On) 사용 시 필요:**
+**가상 피팅(Virtual Try-On) — 백엔드 선택:**
+
+`VTON_BACKEND` 환경 변수로 가상 피팅 백엔드를 고릅니다 (기본값 `api`).
+
 ```bash
+# (기본) 클라우드 API 백엔드 — fal-ai
+export VTON_BACKEND=api          # 생략 가능 (default)
 export FAL_KEY=your_fal_api_key_here
+
+# (선택) 온디바이스 백엔드 — Mobile-VTON, RPi 클러스터에서 실행
+export VTON_BACKEND=ondevice     # 설정법은 아래 "9. 온디바이스 가상 피팅" 참고
 ```
-`FAL_KEY` 미설정 시 `/tryon` 엔드포인트는 동작하지 않으나, 추천 파이프라인(YOLO·CLIP·FAISS)은 정상 동작합니다.
+
+`api` 백엔드는 `FAL_KEY` 미설정 시 `/tryon`이 동작하지 않습니다. 두 경우 모두 추천
+파이프라인(YOLO·CLIP·FAISS)은 정상 동작합니다.
 
 카메라 인덱스를 변경하려면 `src/camera.py`의 `Camera(device_index=0)` 인자를 수정하세요.
 
@@ -238,6 +249,79 @@ source env/bin/activate
 python src/app.py &
 curl http://localhost:5000/health
 # 응답: {"status": "ok"}
+```
+
+---
+
+## 9. 온디바이스 가상 피팅 (선택) — Mobile-VTON 클러스터
+
+`VTON_BACKEND=ondevice`이면 가상 피팅을 **클라우드 없이 RPi5 클러스터에서** 수행합니다
+(fal-ai 미사용). 코드는 `src/ondevice_vton/`에 벤더링되어 있으며, 메인 디노이저를
+**spatial(H-band) 병렬화**로 여러 Pi에 분산합니다.
+
+> ⚠️ **클러스터 필수**: full 해상도(1024×768)는 단일 Pi에서 OOM이라, **2-Pi 이상(권장 4-Pi)**
+> 에서만 동작합니다. 성능 측정·튜닝 내역은 `src/ondevice_vton/OPTIMIZATION_HISTORY.md` 참고.
+
+### 9-1. 클러스터 구성 (4대 RPi5)
+
+상세 체크리스트는 `src/ondevice_vton/parallel/PI_SETUP.md`. 요약:
+
+- 4대 모두 `192.168.100.0/24` eth0 (`rank i → 192.168.100.(i+1)`), 3대 이상은 **GbE 스위치** 필요
+  ```bash
+  sudo ip addr add 192.168.100.<k>/24 dev eth0   # 재부팅마다 재설정 (영구 아님)
+  ```
+- rank0(.1)에서 `.2/.3/.4`로 **passwordless SSH**: `ssh-copy-id willtek@192.168.100.<k>`
+- **4대 모두 동일 경로에 본 레포 체크아웃** (peer 실행 경로가 rank0와 같아야 함)
+
+### 9-2. vton 전용 venv (각 Pi, 최초 1회)
+
+보드 앱 venv(`env/`)와 **별도**입니다 (`transformers` 버전 충돌 회피).
+```bash
+cd src/ondevice_vton
+bash setup_env.sh        # .venv 생성 + requirements_vton.txt 설치 (torch 2.12.1+cpu 등)
+```
+
+### 9-3. Mobile-VTON 체크포인트 (~3.5GB)
+
+`download_ckpt.py`가 HuggingFace(`FlashStight/Mobile-VTON`)에서 받아
+`src/ondevice_vton/checkpoint/`에 넣습니다 (gitignore). **모든 Pi가 동일 경로**에 가져야 합니다.
+```bash
+# 방법 A) 각 Pi에서 HuggingFace로 직접
+cd src/ondevice_vton
+.venv/bin/python download_ckpt.py        # → src/ondevice_vton/checkpoint/
+
+# 방법 B) rank0에 한 번 받고 LAN(GbE)으로 peer에 직송 (WAN 느릴 때 권장)
+for ip in 192.168.100.2 192.168.100.3 192.168.100.4; do
+  rsync -a src/ondevice_vton/checkpoint/ \
+    willtek@$ip:$(pwd)/src/ondevice_vton/checkpoint/
+done
+```
+받은 후 구조: `checkpoint/{denoiser, denoiser_garment, vae, vae_decoder, text_encoder(_2),
+tokenizer(_2), image_encoder}`. 경로를 바꾸려면 `VTON_CHECKPOINT_PATH`로 오버라이드
+(기본 `src/ondevice_vton/checkpoint`).
+
+### 9-4. 활성화 + 실행 (rank0 = 앱 구동 보드)
+
+```bash
+export VTON_BACKEND=ondevice
+# 필요 시 오버라이드 (기본값은 4-Pi 표준):
+#   VTON_PEERS="192.168.100.2 192.168.100.3 192.168.100.4"
+#   VTON_PEER_DIR=<peer의 src/ondevice_vton 절대경로>   # 기본=rank0와 동일 경로
+#   VTON_CHECKPOINT_PATH=<checkpoint 경로>   VTON_STEPS=6
+#   VTON_PYTHON / VTON_PEER_PYTHON=<vton .venv의 python>  # 기본 .venv/bin/python
+python src/app.py
+```
+이후 `/tryon`(포즈 트리거 또는 버튼) 호출 시, fal-ai 대신 클러스터에서 추론합니다
+(상의→하의 순차 합성, 6-step 기준 이미지당 수 분 소요).
+
+### 9-5. 앱 없이 단독 검증 (런처 직접)
+
+```bash
+cd src/ondevice_vton
+# checkpoint는 기본 경로(src/ondevice_vton/checkpoint) 사용
+bash parallel/run_sp_multi.sh 6 _vton_run/output _vton_run/single_data \
+  "192.168.100.2 192.168.100.3 192.168.100.4"
+# single_data는 person/cloth 페어 + test_pairs.txt + image_descriptions.txt 필요
 ```
 
 ---

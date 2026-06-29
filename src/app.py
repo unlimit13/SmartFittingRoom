@@ -16,7 +16,13 @@ sys.path.insert(0, os.path.dirname(__file__))
 from camera import Camera
 from recommender import Recommender
 from pose import PoseTracker
-import tryon as tryon_mod
+
+# Virtual try-on backend: fal-ai API by default; on-device Mobile-VTON (Pi cluster)
+# when VTON_BACKEND=ondevice. Both expose upload_frame/run_tryon_stream/fetch_b64.
+if os.environ.get("VTON_BACKEND", "api").lower() == "ondevice":
+    import tryon_ondevice as tryon_mod
+else:
+    import tryon as tryon_mod
 
 app = Flask(__name__)
 
