@@ -2,8 +2,9 @@
 data/
 models/
 
-# 테스트 결과 (실행 시 생성)
-test-results/
+# 테스트 결과 (실행 시 생성) — 단, 제출용 정본 junit.xml은 추적하여 결과파일.zip에 포함
+test-results/*
+!test-results/junit.xml
 
 # Python
 __pycache__/
@@ -12,6 +13,7 @@ __pycache__/
 .Python
 venv/
 .venv/
+.venv-test/
 env/
 *.egg-info/
 dist/

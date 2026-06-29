@@ -50,6 +50,10 @@ def rec():
     r.searcher._meta = META
     r.reranker = mock.MagicMock()
     r.reranker.extract_palette.return_value = ["#3D6B9F", "#FFFFFF", "#000000"]
+    # rerank returns the top_n candidates so each outfit slot is actually populated.
+    r.reranker.rerank.side_effect = (
+        lambda candidates, text_vec, palette, top_n=1: candidates[:top_n]
+    )
     r._make_qr = lambda url: "fake_qr"
     return r
 
@@ -59,16 +63,14 @@ def test_recommend_outfit_returns_outfits_key(rec):
     assert "outfits" in result
 
 
-def test_recommend_outfit_returns_3_sets(rec):
+def test_recommend_outfit_returns_one_set(rec):
     result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
-    assert len(result["outfits"]) == 3
+    assert len(result["outfits"]) == 1
 
 
 def test_recommend_outfit_set_structure(rec):
     result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
     for outfit in result["outfits"]:
-        assert "snap_id" in outfit
-        assert "anchor_score" in outfit
         assert "tops" in outfit
         assert "bottoms" in outfit
         assert "shoes" in outfit
@@ -86,10 +88,11 @@ def test_recommend_outfit_products_have_required_fields(rec):
                 assert "qr_b64" in product
 
 
-def test_recommend_outfit_sorted_by_score(rec):
+def test_recommend_outfit_one_product_per_slot(rec):
     result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
-    scores = [o["anchor_score"] for o in result["outfits"]]
-    assert scores == sorted(scores, reverse=True)
+    outfit = result["outfits"][0]
+    for slot in ("tops", "bottoms", "shoes"):
+        assert len(outfit[slot]) == 1
 
 
 def test_recommend_outfit_fallback_when_no_crop(rec):

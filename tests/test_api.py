@@ -23,22 +23,9 @@ def _make_mock_recommender():
         "palette": ["#3D6B9F", "#FFFFFF", "#000000"],
         "outfits": [
             {
-                "snap_id": "snap1", "anchor_score": 0.95,
                 "tops":    [{"product_id": "musinsa_001", "name": "오버핏 린넨 셔츠", "url": "https://www.musinsa.com/products/1", "image_path": "tops/musinsa_001.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
                 "bottoms": [{"product_id": "musinsa_002", "name": "슬림핏 청바지", "url": "https://www.musinsa.com/products/2", "image_path": "bottoms/musinsa_002.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
                 "shoes":   [{"product_id": "musinsa_003", "name": "화이트 스니커즈", "url": "https://www.musinsa.com/products/3", "image_path": "shoes/musinsa_003.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
-            },
-            {
-                "snap_id": "snap2", "anchor_score": 0.88,
-                "tops":    [{"product_id": "musinsa_004", "name": "니트", "url": "https://www.musinsa.com/products/4", "image_path": "tops/musinsa_004.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
-                "bottoms": [{"product_id": "musinsa_005", "name": "슬랙스", "url": "https://www.musinsa.com/products/5", "image_path": "bottoms/musinsa_005.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
-                "shoes":   [{"product_id": "musinsa_006", "name": "로퍼", "url": "https://www.musinsa.com/products/6", "image_path": "shoes/musinsa_006.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
-            },
-            {
-                "snap_id": "snap3", "anchor_score": 0.80,
-                "tops":    [{"product_id": "musinsa_007", "name": "후드티", "url": "https://www.musinsa.com/products/7", "image_path": "tops/musinsa_007.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
-                "bottoms": [{"product_id": "musinsa_008", "name": "조거팬츠", "url": "https://www.musinsa.com/products/8", "image_path": "bottoms/musinsa_008.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
-                "shoes":   [{"product_id": "musinsa_009", "name": "운동화", "url": "https://www.musinsa.com/products/9", "image_path": "shoes/musinsa_009.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
             },
         ],
     }
@@ -108,14 +95,14 @@ def test_recommend_result_structure(client):
     assert "elapsed_ms" in data
 
 
-def test_recommend_top3(client):
+def test_recommend_returns_one_outfit(client):
     resp = client.post(
         "/recommend",
         data=json.dumps({"text_query": "", "use_camera": True}),
         content_type="application/json",
     )
     data = resp.get_json()
-    assert len(data["outfits"]) == 3
+    assert len(data["outfits"]) == 1
 
 
 def test_recommend_outfit_structure(client):
@@ -126,8 +113,6 @@ def test_recommend_outfit_structure(client):
     )
     data = resp.get_json()
     for outfit in data["outfits"]:
-        assert "snap_id" in outfit
-        assert "anchor_score" in outfit
         for slot in ("tops", "bottoms", "shoes"):
             assert slot in outfit
             for product in outfit[slot]:

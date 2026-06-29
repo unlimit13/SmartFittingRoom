@@ -1,5 +1,6 @@
 """
-R-01: 웹캠 라이브 피드 — /video_feed HTTP 200, multipart content-type
+웹캠 라이브 피드 — /detection_feed HTTP 200, multipart content-type, MJPEG 프레임 청크.
+(라이브 피드는 /detection_feed 로 서빙된다 — pose 오버레이가 그려진 감지 스트림.)
 """
 import numpy as np
 import unittest.mock as mock
@@ -20,34 +21,32 @@ def client():
     mock_camera.get_frame.return_value = fake_frame
     mock_camera._running = True
 
-    def _fake_generate():
-        yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\nFAKEJPEG\r\n"
-
-    mock_camera.generate_frames.return_value = _fake_generate()
-
-    mock_rec = mock.MagicMock()
-
     with mock.patch.object(app_module, "_camera", mock_camera), \
-         mock.patch.object(app_module, "_recommender", mock_rec):
+         mock.patch.object(app_module, "_pose_tracker", mock.MagicMock()), \
+         mock.patch.object(app_module, "_recommender", mock.MagicMock()):
         app_module.app.config["TESTING"] = True
         with app_module.app.test_client() as c:
             yield c
 
 
-def test_video_feed_status_200(client):
-    resp = client.get("/video_feed")
+def test_detection_feed_status_200(client):
+    resp = client.get("/detection_feed")
     assert resp.status_code == 200
+    resp.close()
 
 
-def test_video_feed_content_type(client):
-    resp = client.get("/video_feed")
+def test_detection_feed_content_type(client):
+    resp = client.get("/detection_feed")
     ct = resp.content_type
     assert "multipart/x-mixed-replace" in ct
     assert "boundary=frame" in ct
+    resp.close()
 
 
-def test_video_feed_contains_frame_data(client):
-    resp = client.get("/video_feed")
-    data = resp.data
-    assert b"--frame" in data
-    assert b"Content-Type: image/jpeg" in data
+def test_detection_feed_yields_frame_chunk(client):
+    # The stream is an infinite generator; pull only the first chunk.
+    resp = client.get("/detection_feed")
+    chunk = next(resp.response)
+    assert b"--frame" in chunk
+    assert b"Content-Type: image/jpeg" in chunk
+    resp.close()
