@@ -49,6 +49,16 @@ class Recommender:
                 })
         return result
 
+    def _shoes_from_snap(self, tops_product_ids: list, gender: str = "") -> list:
+        """Return shoes tied to the given tops via snap_id lookup in snap_outfits.json."""
+        gender_prefix = "men" if "남" in gender else ("women" if "여" in gender else "")
+        for snap_id, outfit in self._snap_outfits.items():
+            if gender_prefix and not snap_id.startswith(gender_prefix):
+                continue
+            if any(pid in outfit.get("tops", []) for pid in tops_product_ids):
+                return self._resolve_products(outfit.get("shoes", []))
+        return []
+
     def recommend_outfit(self, frame, anchor_category: str, text_query: str = "", gender: str = "") -> dict:
         detection = self.detector.detect(frame)
         annotated = detection["annotated"]
@@ -77,11 +87,23 @@ class Recommender:
                 for r in ranked
             ]
 
-        outfit = {
-            "tops":    get_items("tops"),
-            "bottoms": get_items("bottoms"),
-            "shoes":   get_items("shoes"),
-        }
+        tops_items = get_items("tops")
+        shoes_items = self._shoes_from_snap([t["product_id"] for t in tops_items], gender)
+        if not shoes_items:
+            shoes_items = get_items("shoes")
+
+        if anchor_category == "bottoms":
+            outfit = {
+                "tops":    tops_items,
+                "bottoms": [],
+                "shoes":   shoes_items,
+            }
+        else:
+            outfit = {
+                "tops":    tops_items,
+                "bottoms": get_items("bottoms"),
+                "shoes":   shoes_items,
+            }
 
         return {
             "detected": persons_found,
@@ -89,4 +111,5 @@ class Recommender:
             "palette": palette,
             "outfits": [outfit],
             "tops_crop": crops.get("tops"),
+            "bottoms_crop": crops.get("bottoms") if anchor_category == "bottoms" else None,
         }

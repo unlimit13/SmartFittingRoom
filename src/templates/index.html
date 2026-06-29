@@ -596,6 +596,7 @@ const S = {
   idx: 0,
   tryonReady: false,
   capturedTop: null,
+  capturedBottom: null,
   vtonStatus: 'idle',  // idle | loading | done | error | none
   vtonImg: null,
   vtonStep: '',
@@ -708,9 +709,10 @@ async function doRecommend() {
 
     if (data.error) { setStatus('추천 실패:\n' + data.error); S.phase = 'idle'; return; }
 
-    S.outfits     = data.outfits || [];
-    S.capturedTop = data.captured_top_b64 || null;
-    S.idx         = 0;
+    S.outfits        = data.outfits || [];
+    S.capturedTop    = data.captured_top_b64 || null;
+    S.capturedBottom = data.captured_bottom_b64 || null;
+    S.idx            = 0;
     S.phase       = 'results';
     S.tryonReady  = true;
 
@@ -735,12 +737,12 @@ async function doRecommend() {
 function getItems() {
   const o = S.outfits[S.idx];
   if (!o) return [];
-  // 상의 기준 추천이면 사용자의 상의가 anchor라 추천 상의가 없음 → 캡처된 상의로 대체
-  const topItem = S.anchor === 'tops' ? null : (o.tops || [])[0];
+  const topItem    = S.anchor === 'tops'    ? null : (o.tops    || [])[0];
+  const bottomItem = S.anchor === 'bottoms' ? null : (o.bottoms || [])[0];
   return [
-    topItem ? { ...topItem, cat: '상의' } : { cat: '상의', captured: true },
-    { ...((o.bottoms || [])[0] || {}), cat: '하의' },
-    { ...((o.shoes   || [])[0] || {}), cat: '신발' },
+    topItem    ? { ...topItem,    cat: '상의' } : { cat: '상의', capturedTop:    true },
+    bottomItem ? { ...bottomItem, cat: '하의' } : { cat: '하의', capturedBottom: true },
+    { ...((o.shoes || [])[0] || {}), cat: '신발' },
   ];
 }
 
@@ -754,10 +756,17 @@ function renderResults() {
     return;
   }
   scrollH.innerHTML = items.map(it => {
-    const src = it.captured
-      ? (S.capturedTop ? `data:image/jpeg;base64,${S.capturedTop}` : '')
-      : (it.image_path ? `/product_image/${it.image_path}` : '');
-    const name = it.captured ? '캡처된 상의' : (it.name || '-');
+    let src, name;
+    if (it.capturedTop) {
+      src  = S.capturedTop    ? `data:image/jpeg;base64,${S.capturedTop}`    : '';
+      name = '캡처된 상의';
+    } else if (it.capturedBottom) {
+      src  = S.capturedBottom ? `data:image/jpeg;base64,${S.capturedBottom}` : '';
+      name = '캡처된 하의';
+    } else {
+      src  = it.image_path ? `/product_image/${it.image_path}` : '';
+      name = it.name || '-';
+    }
     return `
     <div class="rcard-h">
       <img src="${src}" alt="${name}" onerror="this.style.visibility='hidden'">

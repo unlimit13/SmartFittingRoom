@@ -172,13 +172,20 @@ def recommend():
         _, tbuf = cv2.imencode(".jpg", top_crop, [cv2.IMWRITE_JPEG_QUALITY, 80])
         captured_top_b64 = base64.b64encode(tbuf).decode()
 
+    captured_bottom_b64 = None
+    bottom_crop = result.get("bottoms_crop")
+    if bottom_crop is not None and bottom_crop.size:
+        _, bbuf = cv2.imencode(".jpg", bottom_crop, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        captured_bottom_b64 = base64.b64encode(bbuf).decode()
+
     return jsonify({
-        "detected":         result["detected"],
-        "palette":          result["palette"],
-        "outfits":          result["outfits"],
-        "annotated_b64":    annotated_b64,
-        "captured_top_b64": captured_top_b64,
-        "elapsed_ms":       elapsed_ms,
+        "detected":            result["detected"],
+        "palette":             result["palette"],
+        "outfits":             result["outfits"],
+        "annotated_b64":       annotated_b64,
+        "captured_top_b64":    captured_top_b64,
+        "captured_bottom_b64": captured_bottom_b64,
+        "elapsed_ms":          elapsed_ms,
     })
 
 

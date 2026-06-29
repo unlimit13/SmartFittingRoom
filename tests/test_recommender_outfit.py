@@ -1,6 +1,11 @@
 """
 R-07: 코디 추천 — Recommender.recommend_outfit()가 코디 세트 1개를 반환
       (outfits=[{tops, bottoms, shoes}], 각 슬롯은 product_id/name/url/image_path/qr_b64).
+
+하의기준(anchor='bottoms') 계약:
+  - outfit["bottoms"] == []  (DB 아이템 아닌 사용자 캡처)
+  - result["bottoms_crop"] is not None
+  - outfit["shoes"]는 tops의 snap_id로 먼저 조회, 없으면 유사도 검색 폴백
 """
 import json
 import os
@@ -28,12 +33,13 @@ META = {
     "musinsa_008": {"product_id": "musinsa_008", "gender": "남", "name": "조거팬츠", "url": "https://musinsa.com/8", "image_path": "bottoms/musinsa_008.jpg"},
     "musinsa_009": {"product_id": "musinsa_009", "gender": "남", "name": "운동화", "url": "https://musinsa.com/9", "image_path": "shoes/musinsa_009.jpg"},
 }
+# searcher.search가 항상 반환하는 후보 (tops/shoes 슬롯 모두 musinsa_001 반환 — snap1 tops와 일치)
 CANDIDATES = [
-    {**META["musinsa_002"], "category": "bottoms", "snap_id": "snap1", "score": 0.95},
-    {**META["musinsa_005"], "category": "bottoms", "snap_id": "snap2", "score": 0.88},
-    {**META["musinsa_008"], "category": "bottoms", "snap_id": "snap3", "score": 0.80},
+    {**META["musinsa_001"], "category": "tops", "score": 0.95},
+    {**META["musinsa_004"], "category": "tops", "score": 0.88},
 ]
 DUMMY_FRAME = np.zeros((480, 640, 3), dtype=np.uint8)
+DUMMY_CROP  = np.zeros((100, 100, 3), dtype=np.uint8)
 
 
 @pytest.fixture
@@ -44,7 +50,11 @@ def rec():
     r.detector = mock.MagicMock()
     r.detector.detect.return_value = {
         "annotated": DUMMY_FRAME.copy(),
-        "crops": {"bottoms": np.zeros((100, 100, 3), dtype=np.uint8)},
+        "crops": {
+            "tops":    DUMMY_CROP.copy(),
+            "bottoms": DUMMY_CROP.copy(),
+            "shoes":   DUMMY_CROP.copy(),
+        },
         "persons": [True],
     }
     r.embedder = mock.MagicMock()
@@ -54,7 +64,6 @@ def rec():
     r.searcher._meta = META
     r.reranker = mock.MagicMock()
     r.reranker.extract_palette.return_value = ["#3D6B9F", "#FFFFFF", "#000000"]
-    # rerank returns the top_n candidates so each outfit slot is actually populated.
     r.reranker.rerank.side_effect = (
         lambda candidates, text_vec, palette, top_n=1: candidates[:top_n]
     )
@@ -81,9 +90,10 @@ def test_recommend_outfit_set_structure(rec):
 
 
 def test_recommend_outfit_products_have_required_fields(rec):
+    """하의기준: tops·shoes 슬롯 아이템은 필수 필드를 가져야 한다 (bottoms는 사용자 캡처라 빈 리스트)."""
     result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
     for outfit in result["outfits"]:
-        for slot in ("tops", "bottoms", "shoes"):
+        for slot in ("tops", "shoes"):
             for product in outfit[slot]:
                 assert "product_id" in product
                 assert "name" in product
@@ -92,11 +102,48 @@ def test_recommend_outfit_products_have_required_fields(rec):
                 assert "qr_b64" in product
 
 
-def test_recommend_outfit_one_product_per_slot(rec):
+def test_recommend_outfit_bottoms_anchor_bottoms_slot_is_empty(rec):
+    """하의기준: outfit['bottoms']는 빈 리스트여야 한다 (DB 아이템 표시 금지)."""
     result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
-    outfit = result["outfits"][0]
-    for slot in ("tops", "bottoms", "shoes"):
-        assert len(outfit[slot]) == 1
+    assert result["outfits"][0]["bottoms"] == []
+
+
+def test_recommend_outfit_bottoms_anchor_tops_has_one_item(rec):
+    result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
+    assert len(result["outfits"][0]["tops"]) == 1
+
+
+def test_recommend_outfit_bottoms_anchor_shoes_has_one_item(rec):
+    result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
+    assert len(result["outfits"][0]["shoes"]) == 1
+
+
+def test_recommend_outfit_bottoms_anchor_returns_bottoms_crop(rec):
+    """하의기준: result['bottoms_crop']에 캡처 이미지가 담겨야 한다."""
+    result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
+    assert result.get("bottoms_crop") is not None
+
+
+def test_recommend_outfit_tops_anchor_bottoms_crop_is_none(rec):
+    """상의기준: result['bottoms_crop']은 None이어야 한다."""
+    result = rec.recommend_outfit(DUMMY_FRAME, "tops")
+    assert result.get("bottoms_crop") is None
+
+
+def test_recommend_outfit_shoes_from_snap_lookup(rec):
+    """하의기준: tops top-1이 snap1의 musinsa_001 → shoes는 snap1의 musinsa_003이어야 한다."""
+    result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
+    shoes = result["outfits"][0]["shoes"]
+    assert len(shoes) == 1
+    assert shoes[0]["product_id"] == "musinsa_003"
+
+
+def test_recommend_outfit_shoes_fallback_when_no_snap_match(rec):
+    """tops가 snap에 없으면 shoes는 유사도 검색 폴백으로 채워져야 한다."""
+    rec._snap_outfits = {}  # 비어있어 snap 매칭 불가
+    result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
+    shoes = result["outfits"][0]["shoes"]
+    assert len(shoes) == 1  # 폴백으로 get_items("shoes") 호출됨
 
 
 def test_recommend_outfit_fallback_when_no_crop(rec):
@@ -121,3 +168,19 @@ def test_recommend_outfit_no_gender_passes_none_to_searcher(rec):
     rec.recommend_outfit(DUMMY_FRAME, "bottoms")
     for call in rec.searcher.search.call_args_list:
         assert call.kwargs.get("gender") is None
+
+
+def test_shoes_from_snap_gender_filter(rec):
+    """gender='남' 일 때 'men_' 접두사 snap만 검색한다."""
+    rec._snap_outfits = {
+        "men_snap1":   {"tops": ["musinsa_001"], "bottoms": [], "shoes": ["musinsa_003"]},
+        "women_snap1": {"tops": ["musinsa_001"], "bottoms": [], "shoes": ["musinsa_006"]},
+    }
+    shoes = rec._shoes_from_snap(["musinsa_001"], gender="남")
+    assert len(shoes) == 1
+    assert shoes[0]["product_id"] == "musinsa_003"
+
+
+def test_shoes_from_snap_returns_empty_when_no_match(rec):
+    shoes = rec._shoes_from_snap(["nonexistent_id"], gender="")
+    assert shoes == []
