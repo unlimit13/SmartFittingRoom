@@ -49,6 +49,7 @@ class PoseTracker:
         joints = None
         in_zone = False
         rw = None
+        lw = None
 
         if results.pose_landmarks:
             lm = results.pose_landmarks.landmark
@@ -64,11 +65,18 @@ class PoseTracker:
             in_zone = key_present and all_in_zone
 
             rh = None
-            for idx in [20, 18, 22, 16]:  # index → pinky → thumb → wrist
+            for idx in [20, 18, 22, 16]:  # right: index → pinky → thumb → wrist
                 if len(joints) > idx and joints[idx][2] >= 0.4:
                     rh = joints[idx][:2]
                     break
             rw = rh
+
+            lh = None
+            for idx in [19, 17, 21, 15]:  # left: index → pinky → thumb → wrist
+                if len(joints) > idx and joints[idx][2] >= 0.4:
+                    lh = joints[idx][:2]
+                    break
+            lw = lh
 
         triggered = False
         hold_pct = 0.0
@@ -89,53 +97,33 @@ class PoseTracker:
                 self.disabled = True
                 self._in_zone_since = None
 
+        # Normalize wrist coords to [0,1] relative to frame dimensions
+        rw_n = [rw[0] / w, rw[1] / h] if rw else None
+        lw_n = [lw[0] / w, lw[1] / h] if lw else None
+
         return {
             "joints":   joints,
             "in_zone":  in_zone and not self.disabled,
             "hold_pct": hold_pct,
             "triggered": triggered,
             "disabled": self.disabled,
-            "rw":       list(rw) if rw else None,
+            "rw":       rw_n,
+            "lw":       lw_n,
         }
 
     def draw_overlay(self, frame: np.ndarray, state: dict) -> np.ndarray:
         h, w = frame.shape[:2]
-        zx1, zy1, zx2, zy2 = ZONE
-        px1, py1 = int(zx1 * w), int(zy1 * h)
-        px2, py2 = int(zx2 * w), int(zy2 * h)
-
-        hold_pct = state.get("hold_pct", 0.0)
-        in_zone  = state.get("in_zone", False)
-        disabled = state.get("disabled", False)
-
-        if disabled:
-            color = (60, 60, 60)
-            thickness = 1
-        elif hold_pct > 0:
-            g = int(80 + 175 * hold_pct)
-            r = int(180 * (1 - hold_pct))
-            color = (r, g, 80)
-            thickness = 2 + int(hold_pct * 3)
-        elif in_zone:
-            color = (0, 200, 80)
-            thickness = 2
-        else:
-            color = (160, 160, 160)
-            thickness = 2
-
-        cv2.rectangle(frame, (px1, py1), (px2, py2), color, thickness)
-
-        if not disabled and hold_pct > 0:
-            bar_w = int((px2 - px1) * hold_pct)
-            cv2.rectangle(frame, (px1, py2 - 8), (px1 + bar_w, py2), color, -1)
-            secs_left = max(0.0, HOLD_SEC * (1 - hold_pct))
-            cv2.putText(frame, f"{secs_left:.1f}s",
-                        (px1 + 6, py2 - 14),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
         rw = state.get("rw")
         if rw:
-            cv2.circle(frame, tuple(rw), 12, (0, 255, 180), 2)
-            cv2.circle(frame, tuple(rw), 4,  (0, 255, 180), -1)
+            rx, ry = int(rw[0] * w), int(rw[1] * h)
+            cv2.circle(frame, (rx, ry), 12, (0, 255, 180), 2)
+            cv2.circle(frame, (rx, ry), 4,  (0, 255, 180), -1)
+
+        lw_n = state.get("lw")
+        if lw_n:
+            lx, ly = int(lw_n[0] * w), int(lw_n[1] * h)
+            cv2.circle(frame, (lx, ly), 12, (255, 160, 0), 2)
+            cv2.circle(frame, (lx, ly), 4,  (255, 160, 0), -1)
 
         return frame

@@ -5,451 +5,979 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Fitting Room</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+
     :root {
-      --bg: #0f0f13; --surface: #1c1c24;
-      --accent: #a259ff; --green: #22c55e; --text: #f0f0f0; --muted: #777;
-      --radius: 12px;
+      --teal:        #34d399;
+      --teal-bright: #6ee7b7;
+      --teal-dim:    rgba(52, 211, 153, 0.12);
+      --teal-border: rgba(52, 211, 153, 0.28);
+      --teal-glow:   rgba(52, 211, 153, 0.45);
+      --panel:       rgba(8, 10, 20, 0.88);
+      --border:      rgba(255, 255, 255, 0.07);
+      --text:        #f0f4f8;
+      --muted:       #64748b;
+      --sub:         #94a3b8;
+      --gold:        #fbbf24;
+      --purple:      #a78bfa;
+      --rail-w:      172px;
+      --bar-h:       58px;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text);
-           height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-    header {
-      flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 22px; background: var(--surface); border-bottom: 1px solid #ffffff10;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans KR', system-ui, sans-serif;
+      background: #0a0a0f;
+      color: var(--text);
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .logo { display: flex; align-items: center; gap: 8px; }
-    .logo-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
-    .logo h1 { font-size: 1rem; font-weight: 700; }
-    .live-badge { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--green); font-weight: 600; }
-    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    .layout { flex: 1; display: flex; min-height: 0; }
-
-    /* ── Camera col ── */
-    .camera-col { flex: 0 0 55%; position: relative; background: #000; }
-    #cam-feed { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
-
-    .btn-icon  { font-size: 2rem; line-height: 1; }
-    .btn-label { font-size: 0.72rem; color: #ccc; font-weight: 600; }
-
-    /* All 3 action buttons — stacked right of zone */
-    .tryon-btn {
-      position: absolute; right: calc(22% - 114px); width: 106px; height: 94px;
-      background: rgba(0,0,0,.65); backdrop-filter: blur(8px);
-      border-radius: 14px; border: 2px solid rgba(255,255,255,.15);
-      display: none; flex-direction: column; align-items: center; justify-content: center;
-      gap: 4px; cursor: pointer; overflow: hidden;
-      transition: border-color .15s, background .15s;
+    /* ── Camera ─────────────────────────────────────────── */
+    #cam {
+      position: fixed;
+      top: 50%; left: 50%;
+      width: 100vh; height: 100vw;
+      object-fit: cover;
+      transform: translate(-50%, -50%) rotate(270deg) scaleX(-1);
+      z-index: 0;
     }
-    .tryon-btn:hover  { border-color: var(--accent); background: rgba(162,89,255,.2); }
-    .tryon-btn.hover  { border-color: var(--green);  background: rgba(34,197,94,.2); }
-    .tryon-btn.firing { border-color: #facc15;        background: rgba(250,204,21,.2); }
-    #btn-cancel        { top: calc(50% - 170px); }
-    #btn-tops-tryon    { top: calc(50% -  56px); }
-    #btn-bottoms-tryon { top: calc(50% +  58px); }
-    #btn-cancel:hover, #btn-cancel.hover { border-color: #f87171; background: rgba(248,113,113,.2); }
 
-    /* Dwell progress bar inside tryon buttons */
+    #vignette {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,.55) 0%, transparent 18%),
+        linear-gradient(to top,    rgba(0,0,0,.75) 0%, transparent 35%);
+    }
+
+    /* ── Top bar ─────────────────────────────────────────── */
+    #topbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--bar-h);
+      z-index: 30;
+      background: transparent;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+    }
+    #clock { font-size: 1.05rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+    .app-title {
+      font-size: 1.45rem; font-weight: 700; letter-spacing: -0.3px;
+      background: linear-gradient(90deg, var(--teal) 0%, var(--teal-bright) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    #weather { font-size: 0.92rem; color: var(--text); display: flex; align-items: center; gap: 6px; }
+
+    /* ── Zone box ────────────────────────────────────────── */
+    #zone-box {
+      position: fixed;
+      left: 26vw; right: 26vw;
+      top: calc(var(--bar-h) + 14px);
+      bottom: 14px;
+      z-index: 5; pointer-events: none;
+      border: 2px dashed rgba(52, 211, 153, 0.50);
+      border-radius: 28px;
+      transition: border-color .35s, box-shadow .35s;
+    }
+    #zone-box.in-zone {
+      border-color: var(--teal-glow);
+      box-shadow: 0 0 0 1px rgba(52,211,153,0.10) inset;
+    }
+
+    /* ── Zone message ────────────────────────────────────── */
+    #zone-msg {
+      position: fixed;
+      left: 50%; top: 54%;
+      transform: translate(-50%, -50%);
+      z-index: 8; pointer-events: none;
+      background: rgba(8, 10, 20, 0.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--teal-border);
+      border-radius: 18px;
+      padding: 22px 32px;
+      text-align: center;
+      transition: opacity .3s;
+    }
+    #zone-msg.hidden { opacity: 0; }
+    .zone-msg-title { font-size: 1.35rem; font-weight: 600; line-height: 1.5; color: var(--teal); }
+    .zone-msg-sub { margin-top: 8px; font-size: 0.82rem; color: rgba(255,255,255,0.35); }
+
+    /* ── Rail base ───────────────────────────────────────── */
+    .rail {
+      position: fixed;
+      top: var(--bar-h); bottom: 0;
+      width: var(--rail-w);
+      z-index: 20;
+      background: transparent;
+      display: flex; flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 24px 14px;
+    }
+    #left-rail  { left: 0; }
+    #right-rail { right: 0; }
+
+    .rail-label {
+      font-size: 0.64rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--teal); text-align: center; margin-bottom: 2px;
+    }
+    .rail-section { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+    .rail-divider { width: 55%; height: 1px; background: var(--border); flex-shrink: 0; }
+
+    /* ── Pills (vertical in rail) ────────────────────────── */
+    .pill-group-v { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+    .pill {
+      width: 100%; height: 38px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--sub);
+      font-family: inherit; font-size: 0.82rem; font-weight: 500;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: color .2s, border-color .2s, background .2s;
+    }
+    .pill.active {
+      background: var(--teal-dim);
+      border-color: var(--teal);
+      color: var(--teal);
+      font-weight: 700;
+    }
+
+    /* ── Mic button ──────────────────────────────────────── */
+    #btn-mic {
+      width: 54px; height: 54px; flex-shrink: 0;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: var(--sub); font-size: 1.3rem;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: border-color .2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #btn-mic.listening { border-color: var(--teal); animation: mic-glow 1s ease-in-out infinite; }
+    @keyframes mic-glow {
+      0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.5); }
+      50%      { box-shadow: 0 0 0 10px rgba(52,211,153,0); }
+    }
+
+    /* Text query input (compact, for fallback typing) */
+    #text-input {
+      width: 100%; height: 34px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      font-family: inherit; font-size: 0.72rem;
+      padding: 0 10px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    #text-input::placeholder { color: var(--muted); font-size: 0.68rem; }
+    #text-input:focus { border-color: rgba(52,211,153,0.4); }
+
+    /* 음성 인식 결과: 가운데 박스 아래쪽 반투명 오버레이 */
+    #voice-display {
+      position: fixed;
+      left: 50%; top: 72%;
+      transform: translate(-50%, -50%);
+      z-index: 8; pointer-events: none;
+      display: none;
+      max-width: 60vw; padding: 14px 28px;
+      background: rgba(8, 10, 20, 0.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--teal-border);
+      border-radius: 16px;
+      text-align: center; font-size: 1.15rem; color: var(--teal);
+    }
+    #voice-display.active { display: block; }
+
+    /* ── Right rail buttons ──────────────────────────────── */
+    #btn-recommend {
+      width: 100%; height: 52px;
+      border-radius: 14px; border: none;
+      background: var(--teal); color: #052e16;
+      font-family: inherit; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: opacity .2s, box-shadow .2s;
+      box-shadow: 0 4px 20px rgba(52,211,153,0.30);
+    }
+    #btn-recommend:hover { box-shadow: 0 4px 30px rgba(52,211,153,0.50); }
+    #btn-recommend.dwelling { box-shadow: 0 0 40px rgba(52,211,153,0.65); }
+    #btn-recommend .dwell-bar { background: rgba(5, 46, 22, 0.4); }
+
+    .nav-row { display: flex; gap: 6px; width: 100%; }
+    .nav-btn {
+      flex: 1; height: 44px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--sub); font-size: 1rem;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: border-color .2s, color .2s;
+    }
+    .nav-btn:disabled { opacity: 0.28; cursor: not-allowed; }
+    .nav-btn:not(:disabled):hover { border-color: var(--gold); color: var(--gold); }
+
+    #btn-tryon {
+      width: 100%; height: 48px;
+      border-radius: 12px;
+      border: 1.5px solid var(--purple);
+      background: rgba(167,139,250,0.12);
+      color: var(--purple); font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: box-shadow .2s;
+      font-family: inherit;
+    }
+    #btn-tryon:disabled { opacity: 0.28; cursor: not-allowed; }
+    #btn-tryon.dwelling { box-shadow: 0 0 20px rgba(167,139,250,0.4); }
+
+    #status-text {
+      text-align: center; font-size: 0.70rem; font-weight: 500;
+      color: var(--teal); min-height: 16px;
+      padding: 0 2px; line-height: 1.5;
+    }
+
+    /* ── Results strip ───────────────────────────────────── */
+    #results-strip {
+      position: fixed;
+      top: calc(var(--bar-h) + 12px);
+      right: calc(var(--rail-w) + 8px);
+      width: 104px;
+      z-index: 15;
+      background: transparent;
+      display: flex; flex-direction: column;
+      align-items: stretch;
+      gap: 10px; padding: 0;
+      transition: opacity .3s, transform .3s;
+    }
+    #results-strip.hidden { opacity: 0; pointer-events: none; transform: translateY(-10px); }
+
+    #results-scroll-h {
+      display: flex; flex-direction: column; gap: 10px;
+      width: 100%;
+    }
+    .rcard-h {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--teal-border);
+      background: rgba(8, 10, 20, 0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      overflow: hidden;
+    }
+    .rcard-h img {
+      width: 100%; height: 96px;
+      object-fit: cover; display: block; background: #0f0f18;
+    }
+    .rcard-h-body { padding: 4px 6px 5px; }
+    .rcard-h-cat {
+      font-size: 0.52rem; font-weight: 700;
+      letter-spacing: .8px; text-transform: uppercase; color: var(--teal);
+    }
+    .rcard-h-name {
+      font-size: 0.60rem; color: var(--sub);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+    .strip-meta {
+      flex-shrink: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+    #results-badge {
+      font-size: 0.68rem; color: var(--sub);
+      background: rgba(255,255,255,0.06);
+      border-radius: 20px; padding: 2px 10px;
+      white-space: nowrap;
+    }
+    .strip-empty {
+      display: flex; align-items: center; justify-content: center;
+      flex: 1; font-size: 0.72rem; color: var(--muted);
+    }
+
+    /* ── VTON float (overlays left rail when active) ─────── */
+    #vton-float {
+      position: fixed;
+      left: calc(var(--rail-w) + 12px);
+      bottom: 12px; top: auto;
+      width: 240px; max-height: 64vh;
+      z-index: 25;
+      background: transparent;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      transition: opacity .3s, transform .3s;
+    }
+    #vton-float.hidden { opacity: 0; pointer-events: none; transform: translateX(-8px); }
+
+    .vton-header {
+      padding: 12px 14px 10px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-shrink: 0;
+    }
+    .vton-header-label {
+      font-size: 0.64rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; color: var(--teal);
+    }
+    #vton-step-label { font-size: 0.64rem; color: var(--sub); }
+
+    #vton-body {
+      min-height: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+      padding: 10px; gap: 8px;
+    }
+    #vton-img {
+      width: 100%; height: auto; max-height: 52vh;
+      object-fit: contain; border-radius: 10px; display: none;
+    }
+    #vton-spinner {
+      width: 28px; height: 28px;
+      border: 3px solid rgba(255,255,255,0.08);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+      display: none;
+    }
+    #vton-placeholder {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px; padding: 20px 8px;
+    }
+    .vton-ph-icon { font-size: 1.8rem; opacity: 0.28; }
+    .vton-ph-text { font-size: 0.68rem; color: var(--muted); text-align: center; line-height: 1.6; }
+    #vton-status-label {
+      font-size: 0.63rem; color: var(--teal);
+      text-align: center; padding: 4px 8px 8px; flex-shrink: 0;
+    }
+
+    /* ── Dwell bar ───────────────────────────────────────── */
     .dwell-bar {
-      position: absolute; bottom: 0; left: 0; height: 3px;
-      background: var(--green); width: 0%;
+      position: absolute; bottom: 0; left: 0;
+      width: 0%; height: 3px;
+      background: var(--teal);
+      pointer-events: none;
     }
+    .dwell-bar.gold   { background: var(--gold); }
+    .dwell-bar.purple { background: var(--purple); }
 
-    /* Wrist cursor */
-    #wrist-cursor {
-      position: absolute; width: 22px; height: 22px; border-radius: 50%;
-      border: 2px solid #3b82f6; background: rgba(59,130,246,.35);
-      transform: translate(-50%,-50%); pointer-events: none; display: none;
-      box-shadow: 0 0 8px rgba(59,130,246,.7);
+    /* ── Countdown overlay ───────────────────────────────── */
+    #countdown-overlay {
+      position: fixed; inset: 0; z-index: 60;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(8px);
     }
-
-    /* Countdown overlay */
-    #countdown {
-      display: none; position: absolute; inset: 0;
-      align-items: center; justify-content: center;
-      font-size: 8rem; font-weight: 900; color: #fff;
-      text-shadow: 0 0 40px rgba(162,89,255,.9), 0 4px 16px rgba(0,0,0,.8);
-      pointer-events: none; animation: countdown-pop .35s ease-out;
+    .cd-label {
+      font-size: 0.95rem; letter-spacing: 2.5px; text-transform: uppercase;
+      color: rgba(255,255,255,0.5); font-weight: 500;
     }
-    @keyframes countdown-pop {
-      from { transform: scale(1.6); opacity: 0; }
+    #countdown-num {
+      font-size: 20rem; font-weight: 900; line-height: 1;
+      background: linear-gradient(135deg, var(--teal), var(--teal-bright));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 60px rgba(52,211,153,.55));
+      animation: pop .38s cubic-bezier(.22,1,.36,1);
+    }
+    @keyframes pop {
+      from { transform: scale(1.7); opacity: 0; }
       to   { transform: scale(1);   opacity: 1; }
     }
 
-    /* Zone status badge */
-    #zone-status {
-      position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,.65); color: #ccc; font-size: 0.78rem; font-weight: 600;
-      padding: 5px 16px; border-radius: 20px; pointer-events: none;
-      white-space: nowrap; border: 1px solid rgba(255,255,255,.1);
-      transition: color .2s, border-color .2s;
+    /* ── Loading overlay ─────────────────────────────────── */
+    #loading-overlay {
+      position: fixed; inset: 0; z-index: 60;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 18px;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(8px);
     }
-    #zone-status.in-zone  { color: var(--green); border-color: rgba(34,197,94,.4); }
-    #zone-status.counting { color: #facc15;       border-color: rgba(250,204,21,.4); }
+    .load-spinner {
+      width: 52px; height: 52px;
+      border: 3px solid rgba(52,211,153,0.15);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .load-title { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+    .load-sub   { font-size: 0.85rem; color: var(--sub); }
 
-    /* ── Right result col ── */
-    .result-col {
-      flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 12px; min-width: 0;
+    /* ── Hand cursors ────────────────────────────────────── */
+    .cursor {
+      position: fixed; z-index: 100;
+      pointer-events: none; display: none;
+      transform: translate(-50%, -50%);
     }
-    .capture-wrap {
-      flex: 1; border-radius: var(--radius); overflow: hidden;
-      background: var(--surface); border: 1px solid #ffffff0e;
-      position: relative; display: flex; align-items: center; justify-content: center; min-height: 0;
+    .c-inner {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2.5px solid; position: relative;
+      transition: transform .08s;
     }
-    #capture-img { width: 100%; height: 100%; object-fit: contain; display: none; }
-    .capture-placeholder { color: var(--muted); font-size: 0.88rem; text-align: center; line-height: 1.7; }
-    .capture-badge {
-      display: none; position: absolute; top: 9px; left: 11px;
-      background: rgba(0,0,0,.6); color: #ccc; font-size: 0.68rem;
-      padding: 2px 9px; border-radius: 20px;
+    .c-outer {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 1px solid; opacity: 0.35;
     }
-    .capture-loading {
-      display: none; position: absolute; inset: 0;
-      background: rgba(0,0,0,.55); align-items: center; justify-content: center;
-      font-size: 0.85rem; color: #aaa;
-    }
-    .clothes-grid { flex: 0 0 160px; display: flex; gap: 8px; }
-    .clothes-item {
-      flex: 1; border-radius: 10px; overflow: hidden;
-      background: var(--surface); border: 1px solid #ffffff0a;
-    }
-    .clothes-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .clothes-empty {
-      height: 100%; display: flex; align-items: center; justify-content: center;
-      color: var(--muted); font-size: 1.6rem;
-    }
+    #cursor-l .c-inner { border-color: var(--teal);   background: rgba(52,211,153,0.18); }
+    #cursor-l .c-outer { border-color: var(--teal); }
+    #cursor-r .c-inner { border-color: #60a5fa; background: rgba(96,165,250,0.18); }
+    #cursor-r .c-outer { border-color: #60a5fa; }
+    .cursor.dwelling .c-inner { transform: scale(1.5); }
+
+    .hidden { display: none !important; }
+
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(52,211,153,0.2); border-radius: 2px; }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo"><div class="logo-dot"></div><h1>Smart Fitting Room</h1></div>
-  <div class="live-badge"><div class="live-dot"></div>LIVE</div>
-</header>
+<img id="cam" src="/detection_feed" alt="">
+<div id="vignette"></div>
+<div id="zone-box"></div>
 
-<div class="layout">
-  <div class="camera-col">
-    <img id="cam-feed" src="/detection_feed" alt="camera">
+<div id="zone-msg">
+  <div class="zone-msg-title">전신이 박스 안에<br>들어오도록 서주세요</div>
+  <div class="zone-msg-sub">손을 레일 버튼 위에 1초간 올려주세요</div>
+</div>
 
-    <div id="countdown"></div>
-    <div id="wrist-cursor"></div>
+<!-- ── Top bar ─────────────────────────────────────────── -->
+<div id="topbar">
+  <span id="clock">--:--</span>
+  <div class="app-title">Smart Fitting Room</div>
+  <div id="weather">☀ ...</div>
+</div>
 
-    <div class="tryon-btn" id="btn-cancel">
-      <div class="btn-icon">✕</div>
-      <div class="btn-label">취소</div>
-      <div class="dwell-bar" id="dwell-cancel"></div>
+<!-- ── Left Rail ───────────────────────────────────────── -->
+<div id="left-rail" class="rail">
+  <div class="rail-section">
+    <div class="rail-label">성별</div>
+    <div class="pill-group-v">
+      <button class="pill active" data-action="gender" data-val="남">남
+        <div class="dwell-bar"></div>
+      </button>
+      <button class="pill" data-action="gender" data-val="여">여
+        <div class="dwell-bar"></div>
+      </button>
     </div>
-
-    <div class="tryon-btn" id="btn-tops-tryon">
-      <div class="btn-icon">👕</div>
-      <div class="btn-label">상의</div>
-      <div class="dwell-bar" id="dwell-tops"></div>
-    </div>
-
-    <div class="tryon-btn" id="btn-bottoms-tryon">
-      <div class="btn-icon">👖</div>
-      <div class="btn-label">하의</div>
-      <div class="dwell-bar" id="dwell-bottoms"></div>
-    </div>
-
-    <div id="zone-status">📍 Zone 안에 서주세요</div>
   </div>
 
-  <div class="result-col">
-    <div class="capture-wrap">
-      <img id="capture-img" alt="캡처">
-      <div class="capture-placeholder" id="capture-ph">🕴<br>카메라 Zone 안에<br><b>3초간</b> 서 있으면 자동 추천됩니다</div>
-      <div class="capture-badge" id="capture-badge"></div>
-      <div class="capture-loading" id="capture-loading">⏳ 처리 중...</div>
+  <div class="rail-divider"></div>
+
+  <div class="rail-section">
+    <div class="rail-label">추천 기준</div>
+    <div class="pill-group-v">
+      <button class="pill active" data-action="anchor" data-val="tops">상의기준
+        <div class="dwell-bar"></div>
+      </button>
+      <button class="pill" data-action="anchor" data-val="bottoms">하의기준
+        <div class="dwell-bar"></div>
+      </button>
+      <button class="pill" data-action="anchor" data-val="full">전체
+        <div class="dwell-bar"></div>
+      </button>
     </div>
-    <div class="clothes-grid" id="clothes-grid">
-      <div class="clothes-item"><div class="clothes-empty">👕</div></div>
-      <div class="clothes-item"><div class="clothes-empty">👖</div></div>
-      <div class="clothes-item"><div class="clothes-empty">👟</div></div>
-    </div>
+  </div>
+
+  <div class="rail-divider"></div>
+
+  <div class="rail-section">
+    <div class="rail-label">음성 입력</div>
+    <button id="btn-mic" data-action="mic">🎙
+      <div class="dwell-bar"></div>
+    </button>
+    <div id="voice-display"></div>
+    <input id="text-input" type="text" placeholder="조건 직접 입력...">
   </div>
 </div>
 
+<!-- ── VTON float (overlays left rail when active) ────── -->
+<div id="vton-float" class="hidden">
+  <div class="vton-header">
+    <span class="vton-header-label">가상 피팅</span>
+    <span id="vton-step-label"></span>
+  </div>
+  <div id="vton-body">
+    <div id="vton-placeholder">
+      <div class="vton-ph-icon">👚</div>
+      <div class="vton-ph-text">입어보기 버튼을<br>눌러주세요</div>
+    </div>
+    <div id="vton-spinner"></div>
+    <img id="vton-img" alt="VTON 결과">
+  </div>
+  <div id="vton-status-label"></div>
+</div>
+
+<!-- ── Results strip ──────────────────────────────────── -->
+<div id="results-strip" class="hidden">
+  <div id="results-scroll-h">
+    <div class="strip-empty">추천 결과가 여기에 표시됩니다</div>
+  </div>
+  <div class="strip-meta">
+    <span id="results-badge"></span>
+  </div>
+</div>
+
+<!-- ── Right Rail ──────────────────────────────────────── -->
+<div id="right-rail" class="rail">
+  <div class="rail-section">
+    <button id="btn-recommend" data-action="recommend">추천 받기
+      <div class="dwell-bar"></div>
+    </button>
+  </div>
+
+  <div class="rail-divider"></div>
+
+  <div class="rail-section">
+    <div class="rail-label">후보 탐색</div>
+    <div class="nav-row">
+      <button class="nav-btn" id="btn-prev" data-action="prev" disabled>◀
+        <div class="dwell-bar gold"></div>
+      </button>
+      <button class="nav-btn" id="btn-next" data-action="next" disabled>▶
+        <div class="dwell-bar gold"></div>
+      </button>
+    </div>
+    <button id="btn-tryon" data-action="tryon" disabled>◈ 입어보기
+      <div class="dwell-bar purple"></div>
+    </button>
+  </div>
+
+  <div class="rail-divider"></div>
+
+  <div class="rail-section">
+    <div id="status-text">화면 앞에 서서<br>전신을 인식시켜 주세요</div>
+  </div>
+</div>
+
+<!-- ── Countdown ──────────────────────────────────────── -->
+<div id="countdown-overlay" class="hidden">
+  <div class="cd-label">촬영 준비중</div>
+  <div id="countdown-num">3</div>
+</div>
+
+<!-- ── Loading ─────────────────────────────────────────── -->
+<div id="loading-overlay" class="hidden">
+  <div class="load-spinner"></div>
+  <div class="load-title">AI 분석중</div>
+  <div class="load-sub" id="loading-sub">코디를 추천하고 있습니다...</div>
+</div>
+
+<!-- ── Hand cursors ───────────────────────────────────── -->
+<div id="cursor-l" class="cursor"><div class="c-inner"><div class="c-outer"></div></div></div>
+<div id="cursor-r" class="cursor"><div class="c-inner"><div class="c-outer"></div></div></div>
+
 <script>
-const camFeed      = document.getElementById('cam-feed');
-const wristCursor  = document.getElementById('wrist-cursor');
-const countdownEl  = document.getElementById('countdown');
-const zoneStatus   = document.getElementById('zone-status');
-const captureImg   = document.getElementById('capture-img');
-const capturePh    = document.getElementById('capture-ph');
-const captureBadge = document.getElementById('capture-badge');
-const captureLoad  = document.getElementById('capture-loading');
-const clothesGrid  = document.getElementById('clothes-grid');
-const btnCancel    = document.getElementById('btn-cancel');
-const btnTopsT     = document.getElementById('btn-tops-tryon');
-const btnBottomsT  = document.getElementById('btn-bottoms-tryon');
-const dwellCancel  = document.getElementById('dwell-cancel');
-const dwellTops    = document.getElementById('dwell-tops');
-const dwellBottoms = document.getElementById('dwell-bottoms');
+const S = {
+  phase: 'idle',
+  gender: '남',
+  anchor: 'tops',
+  textQuery: '',
+  outfits: [],
+  idx: 0,
+  tryonReady: false,
+  capturedTop: null,
+  vtonStatus: 'idle',  // idle | loading | done | error | none
+  vtonImg: null,
+  vtonStep: '',
+  vtonError: '',
+};
 
-let _busy        = false;
-let _tryonTop    = null;
-let _tryonBottom = null;
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-// ── Wrist dwell state ────────────────────────────────────────────────
-const WRIST_DWELL_MS = 1000;
-let _wHoverTarget = null;
-let _wHoverStart  = 0;
+// ── Clock ──────────────────────────────────────────────
+(function tickClock() {
+  const n = new Date();
+  $('clock').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+  setTimeout(tickClock, 1000);
+})();
 
-// ── Pose polling ─────────────────────────────────────────────────────
-async function pollPose() {
+// ── Weather ────────────────────────────────────────────
+fetch('https://api.open-meteo.com/v1/forecast?latitude=37.57&longitude=126.98&current=temperature_2m,weathercode')
+  .then(r => r.json())
+  .then(d => {
+    const t = Math.round(d.current.temperature_2m);
+    const code = d.current.weathercode;
+    const icon = code === 0 ? '☀' : code <= 3 ? '⛅' : code <= 67 ? '🌧' : '☁';
+    $('weather').textContent = `${icon} Seoul, ${t}°C`;
+  }).catch(() => { $('weather').textContent = ''; });
+
+// ── Status ─────────────────────────────────────────────
+function setStatus(msg) { $('status-text').innerHTML = msg.replace('\n', '<br>'); }
+
+// ── Toggles ────────────────────────────────────────────
+function applyToggle(action, val) {
+  document.querySelectorAll(`[data-action="${action}"]`).forEach(b => {
+    b.classList.toggle('active', b.dataset.val === val);
+  });
+  if (action === 'gender') S.gender = val;
+  if (action === 'anchor') S.anchor = val;
+}
+
+// ── Voice ──────────────────────────────────────────────
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+if (SR) {
+  rec = new SR(); rec.lang = 'ko-KR'; rec.interimResults = false;
+  rec.onstart  = () => {
+    $('btn-mic').classList.add('listening'); setStatus('말씀해 주세요...');
+    const vd = $('voice-display');
+    vd.textContent = '🎙 말씀해 주세요...';
+    vd.classList.add('active');
+  };
+  rec.onresult = e => {
+    S.textQuery = e.results[0][0].transcript;
+    $('text-input').value = S.textQuery;
+    const vd = $('voice-display');
+    vd.textContent = `"${S.textQuery}"`;
+    vd.classList.add('active');
+    setStatus(`음성: "${S.textQuery}"`);
+  };
+  rec.onerror = () => setStatus('음성 인식 실패');
+  rec.onend   = () => $('btn-mic').classList.remove('listening');
+}
+function startMic() {
+  if (!rec) { setStatus('음성 인식 미지원'); return; }
+  try { rec.start(); } catch(_) {}
+}
+
+$('text-input').addEventListener('input', e => { S.textQuery = e.target.value; });
+
+// ── Countdown ──────────────────────────────────────────
+async function countdown() {
+  const ov = $('countdown-overlay'), num = $('countdown-num');
+  ov.classList.remove('hidden');
+  for (let i = 3; i >= 1; i--) {
+    num.textContent = i;
+    num.style.animation = 'none'; void num.offsetWidth;
+    num.style.animation = 'pop .38s cubic-bezier(.22,1,.36,1)';
+    await sleep(1000);
+  }
+  ov.classList.add('hidden');
+}
+
+// ── Recommend ──────────────────────────────────────────
+async function doRecommend() {
+  if (!['idle','results'].includes(S.phase)) return;
+  S.phase = 'countdown';
+  $('zone-msg').classList.add('hidden');
+  setStatus('촬영 준비중...');
+  await countdown();
+
+  S.phase = 'loading';
+  $('loading-sub').textContent = '코디를 추천하고 있습니다...';
+  $('loading-overlay').classList.remove('hidden');
+  setStatus('AI가 분석중입니다...');
+
+  const anchorCat = S.anchor === 'full' ? 'tops' : S.anchor;
+
   try {
-    const data = await fetch('/pose_poll').then(r => r.json());
-    updateZoneStatus(data);
-    updateWristCursor(data.rw);
-    if (data.triggered && !_busy) {
-      _busy = true;
-      doRecommend();
-    }
-  } catch (_) {}
+    const res = await fetch('/recommend', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        anchor_category: anchorCat,
+        gender: S.gender,
+        text_query: S.textQuery,
+        use_camera: true,
+      }),
+    });
+    const data = await res.json();
+    $('loading-overlay').classList.add('hidden');
+
+    if (data.error) { setStatus('추천 실패:\n' + data.error); S.phase = 'idle'; return; }
+
+    S.outfits     = data.outfits || [];
+    S.capturedTop = data.captured_top_b64 || null;
+    S.idx         = 0;
+    S.phase       = 'results';
+    S.tryonReady  = true;
+
+    renderResults();
+    $('results-strip').classList.remove('hidden');
+    $('btn-tryon').disabled = false;
+    $('btn-prev').disabled  = false;
+    $('btn-next').disabled  = false;
+    setStatus(`추천 완료\n${S.outfits.length}가지 코디`);
+
+    // 이전 결과 패널 닫고, top1 기준 VTON을 미리 백그라운드 요청
+    $('vton-float').classList.add('hidden');
+    prefetchTryon();
+  } catch(e) {
+    $('loading-overlay').classList.add('hidden');
+    setStatus('네트워크 오류:\n' + e.message);
+    S.phase = 'idle';
+  }
 }
 
-function updateZoneStatus(data) {
-  if (data.disabled) {
-    zoneStatus.textContent = '🔒 취소 버튼을 눌러 다시 시작';
-    zoneStatus.className = '';
+// ── Results rendering ──────────────────────────────────
+function getItems() {
+  const o = S.outfits[S.idx];
+  if (!o) return [];
+  // 상의 기준 추천이면 사용자의 상의가 anchor라 추천 상의가 없음 → 캡처된 상의로 대체
+  const topItem = S.anchor === 'tops' ? null : (o.tops || [])[0];
+  return [
+    topItem ? { ...topItem, cat: '상의' } : { cat: '상의', captured: true },
+    { ...((o.bottoms || [])[0] || {}), cat: '하의' },
+    { ...((o.shoes   || [])[0] || {}), cat: '신발' },
+  ];
+}
+
+function renderResults() {
+  const scrollH = $('results-scroll-h');
+  const items   = getItems();
+  $('results-badge').textContent = `${S.idx+1} / ${S.outfits.length}`;
+
+  if (!items.length) {
+    scrollH.innerHTML = `<div class="strip-empty">아이템 없음</div>`;
     return;
   }
-  const pct = data.hold_pct || 0;
-  if (pct > 0) {
-    zoneStatus.textContent = `⏳ ${(3 * (1 - pct)).toFixed(1)}초 유지 중...`;
-    zoneStatus.className = 'counting';
-  } else if (data.in_zone) {
-    zoneStatus.textContent = '✅ Zone 안에 있습니다';
-    zoneStatus.className = 'in-zone';
-  } else {
-    zoneStatus.textContent = '📍 Zone 안에 서주세요';
-    zoneStatus.className = '';
-  }
+  scrollH.innerHTML = items.map(it => {
+    const src = it.captured
+      ? (S.capturedTop ? `data:image/jpeg;base64,${S.capturedTop}` : '')
+      : (it.image_path ? `/product_image/${it.image_path}` : '');
+    const name = it.captured ? '캡처된 상의' : (it.name || '-');
+    return `
+    <div class="rcard-h">
+      <img src="${src}" alt="${name}" onerror="this.style.visibility='hidden'">
+      <div class="rcard-h-body">
+        <div class="rcard-h-cat">${it.cat}</div>
+        <div class="rcard-h-name">${name}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function updateWristCursor(rw) {
-  if (!rw || _busy) {
-    wristCursor.style.display = 'none';
-    clearWristHover();
-    return;
+function navigate(dir) {
+  if (!S.outfits.length) return;
+  S.idx = (S.idx + dir + S.outfits.length) % S.outfits.length;
+  renderResults();
+}
+
+// ── VTON ───────────────────────────────────────────────
+// 추천 top1 기준 VTON 요청 본문 구성
+function buildTryonBody() {
+  const o = S.outfits[0];
+  if (!o) return null;
+  const body = {};
+  if (S.anchor === 'tops')         body.bottom_image_path = (o.bottoms||[])[0]?.image_path;
+  else if (S.anchor === 'bottoms') body.top_image_path    = (o.tops||[])[0]?.image_path;
+  else {
+    body.top_image_path    = (o.tops||[])[0]?.image_path;
+    body.bottom_image_path = (o.bottoms||[])[0]?.image_path;
   }
+  if (!body.top_image_path && !body.bottom_image_path) return null;
+  return body;
+}
 
-  const camRect  = camFeed.getBoundingClientRect();
-  const wrapRect = camFeed.parentElement.getBoundingClientRect();
-
-  // Mirror x: right wrist is on left of raw frame → appears right in mirrored display
-  const fx = 640 - rw[0];
-  const fy = rw[1];
-
-  const cx = (fx / 640) * camRect.width  + (camRect.left - wrapRect.left);
-  const cy = (fy / 480) * camRect.height + (camRect.top  - wrapRect.top);
-
-  wristCursor.style.left    = cx + 'px';
-  wristCursor.style.top     = cy + 'px';
-  wristCursor.style.display = 'block';
-
-  // Hit-test tryon buttons (page coords)
-  const px = (fx / 640) * camRect.width  + camRect.left;
-  const py = (fy / 480) * camRect.height + camRect.top;
-  const target = hitTryonBtn(px, py);
-
-  if (target && target === _wHoverTarget) {
-    const pct = Math.min(1, (Date.now() - _wHoverStart) / WRIST_DWELL_MS);
-    getDwell(target).style.width = (pct * 100) + '%';
-    document.getElementById(target).classList.add('hover');
-    if (pct >= 1) {
-      document.getElementById(target).classList.add('firing');
-      fireWrist(target);
+// 추천받기 직후 백그라운드로 VTON API 요청을 미리 보냄(결과는 state에 저장)
+async function prefetchTryon() {
+  const body = buildTryonBody();
+  S.vtonImg = null; S.vtonStep = ''; S.vtonError = '';
+  if (!body) { S.vtonStatus = 'none'; renderVton(); return; }
+  S.vtonStatus = 'loading';
+  renderVton();
+  try {
+    const resp = await fetch('/tryon', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    const reader = resp.body.getReader();
+    const dec    = new TextDecoder();
+    let   buf    = '';
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, {stream: true});
+      const lines = buf.split('\n'); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let ev; try { ev = JSON.parse(line.slice(6)); } catch { continue; }
+        if (ev.error) { S.vtonStatus = 'error'; S.vtonError = ev.error; renderVton(); return; }
+        if (ev.result_b64) {
+          S.vtonImg  = `data:${ev.mime||'image/jpeg'};base64,${ev.result_b64}`;
+          S.vtonStep = ev.step;
+          renderVton();
+        }
+        if (ev.step === 'done') S.vtonStatus = 'done';
+      }
     }
-  } else {
-    clearWristHover();
-    _wHoverTarget = target;
-    _wHoverStart  = Date.now();
+    if (S.vtonStatus !== 'error') { S.vtonStatus = 'done'; renderVton(); }
+  } catch(e) {
+    S.vtonStatus = 'error'; S.vtonError = '오류 발생'; renderVton();
   }
 }
 
-const DWELL_BTN_IDS = ['btn-cancel', 'btn-tops-tryon', 'btn-bottoms-tryon'];
+// 현재 VTON state를 패널에 반영(패널이 열려있을 때만)
+function renderVton() {
+  if ($('vton-float').classList.contains('hidden')) return;
+  const ph = $('vton-placeholder'), img = $('vton-img'), sp = $('vton-spinner');
+  $('vton-step-label').textContent = S.vtonStep || '';
+  if (S.vtonStatus === 'done') {
+    img.src = S.vtonImg; img.style.display = 'block';
+    sp.style.display = 'none'; ph.style.display = 'none';
+    $('vton-status-label').textContent = '완료 ✓';
+  } else if (S.vtonStatus === 'error') {
+    sp.style.display = 'none';
+    $('vton-status-label').textContent = '오류: ' + (S.vtonError || '');
+  } else if (S.vtonStatus === 'none') {
+    sp.style.display = 'none'; img.style.display = 'none'; ph.style.display = 'flex';
+    $('vton-status-label').textContent = '피팅 대상 없음';
+  } else { // loading
+    ph.style.display = 'none';
+    if (S.vtonImg) { img.src = S.vtonImg; img.style.display = 'block'; sp.style.display = 'none'; }
+    else { img.style.display = 'none'; sp.style.display = 'block'; }
+    $('vton-status-label').textContent = '처리중...';
+  }
+}
 
-function hitTryonBtn(px, py) {
-  for (const id of DWELL_BTN_IDS) {
-    const el = document.getElementById(id);
-    if (!el || el.style.display !== 'flex') continue;
+// 입어보기: 새 요청 없이 미리 받아둔(또는 로딩중인) 결과를 띄움
+function doTryon() {
+  $('vton-float').classList.remove('hidden');
+  renderVton();
+  setStatus(S.vtonStatus === 'done' ? '가상 피팅 완료' : '가상 피팅 처리중...');
+}
+
+// ── Action dispatch ────────────────────────────────────
+function trigger(action, val) {
+  if (action === 'anchor')    { applyToggle('anchor', val); return; }
+  if (action === 'gender')    { applyToggle('gender', val); return; }
+  if (action === 'mic')       { startMic(); return; }
+  if (action === 'recommend') { doRecommend(); return; }
+  if (action === 'tryon')     { doTryon(); return; }
+  if (action === 'prev')      { navigate(-1); return; }
+  if (action === 'next')      { navigate(+1); return; }
+}
+
+// ── Dwell ──────────────────────────────────────────────
+const DWELL_MS = 1000;
+const BLOCKING = new Set(['countdown','loading','vton_loading']);
+const dwell = {
+  left:  {el: null, t: 0},
+  right: {el: null, t: 0},
+};
+
+function hitTest(x, y) {
+  for (const el of document.querySelectorAll('button:not(:disabled)')) {
     const r = el.getBoundingClientRect();
-    const pad = 12;
-    if (px >= r.left - pad && px <= r.right + pad &&
-        py >= r.top  - pad && py <= r.bottom + pad) return id;
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return el;
   }
   return null;
 }
 
-function getDwell(id) {
-  if (id === 'btn-cancel')       return dwellCancel;
-  if (id === 'btn-tops-tryon')   return dwellTops;
-  return dwellBottoms;
+function clearDwell(hand) {
+  const d = dwell[hand];
+  if (!d.el) return;
+  const bar = d.el.querySelector('.dwell-bar');
+  if (bar) bar.style.width = '0%';
+  d.el.classList.remove('dwelling');
+  d.el = null; d.t = 0;
 }
 
-function clearWristHover() {
-  for (const id of DWELL_BTN_IDS) {
-    document.getElementById(id).classList.remove('hover', 'firing');
+function stepDwell(hand, x, y) {
+  const d   = dwell[hand];
+  const el  = hitTest(x, y);
+  const cur = $(hand === 'left' ? 'cursor-l' : 'cursor-r');
+
+  if (el !== d.el) {
+    clearDwell(hand);
+    d.el = el; d.t = el ? Date.now() : 0;
   }
-  dwellCancel.style.width  = '0%';
-  dwellTops.style.width    = '0%';
-  dwellBottoms.style.width = '0%';
-  _wHoverTarget = null;
-}
+  if (!el) { cur?.classList.remove('dwelling'); return; }
 
-function fireWrist(id) {
-  clearWristHover();
-  if (id === 'btn-tops-tryon')         { if (!_busy) { _busy = true; doTryon(_tryonTop, null); } }
-  else if (id === 'btn-bottoms-tryon') { if (!_busy) { _busy = true; doTryon(null, _tryonBottom); } }
-  else if (id === 'btn-cancel')        doCancel();
-}
+  const pct = Math.min(100, (Date.now() - d.t) / DWELL_MS * 100);
+  const bar = el.querySelector('.dwell-bar');
+  if (bar) bar.style.width = pct + '%';
+  el.classList.add('dwelling');
+  cur?.classList.add('dwelling');
 
-// ── Countdown ─────────────────────────────────────────────────────────
-function runCountdown() {
-  return new Promise(resolve => {
-    let n = 3;
-    countdownEl.textContent = n;
-    countdownEl.style.display = 'flex';
-    const tick = () => {
-      n--;
-      if (n <= 0) {
-        countdownEl.style.display = 'none';
-        resolve();
-      } else {
-        countdownEl.style.animation = 'none';
-        countdownEl.textContent = n;
-        void countdownEl.offsetWidth;
-        countdownEl.style.animation = '';
-        setTimeout(tick, 1000);
-      }
-    };
-    setTimeout(tick, 1000);
-  });
-}
-
-// ── 추천 ─────────────────────────────────────────────────────────────
-async function doRecommend() {
-  _tryonTop = null; _tryonBottom = null;
-  btnCancel.style.display   = 'none';
-  btnTopsT.style.display    = 'none';
-  btnBottomsT.style.display = 'none';
-
-  await runCountdown();
-  showLoading(true);
-
-  try {
-    const resp = await fetch('/recommend', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ use_camera: true, text_query: '' }),
-    });
-    const data = await resp.json();
-    if (data.error) return;
-
-    showCapture('data:image/jpeg;base64,' + data.annotated_b64, '📸 감지 결과');
-
-    const outfits    = data.outfits || [];
-    const first      = outfits[0] || {};
-    const topItem    = (first.tops    || [])[0] || null;
-    const bottomItem = (first.bottoms || [])[0] || null;
-    const shoeItem   = (first.shoes   || [])[0] || null;
-
-    clothesGrid.innerHTML = [
-      topItem    ? `<img src="/product_image/${topItem.image_path}"    alt="">` : '<div class="clothes-empty">👕</div>',
-      bottomItem ? `<img src="/product_image/${bottomItem.image_path}" alt="">` : '<div class="clothes-empty">👖</div>',
-      shoeItem   ? `<img src="/product_image/${shoeItem.image_path}"   alt="">` : '<div class="clothes-empty">👟</div>',
-    ].map(inner => `<div class="clothes-item">${inner}</div>`).join('');
-
-    if (topItem    && topItem.image_path)    _tryonTop    = topItem.image_path;
-    if (bottomItem && bottomItem.image_path) _tryonBottom = bottomItem.image_path;
-
-    if (_tryonTop)    btnTopsT.style.display    = 'flex';
-    if (_tryonBottom) btnBottomsT.style.display = 'flex';
-    btnCancel.style.display = 'flex';
-
-  } catch (_) {
-  } finally {
-    showLoading(false);
-    _busy = false;
-  }
-}
-
-// ── Virtual Try-On ────────────────────────────────────────────────────
-async function doTryon(topPath, bottomPath) {
-  if (!topPath && !bottomPath) return;
-  const hasBoth = topPath && bottomPath;
-  showLoading(true, topPath ? '👕 상의 생성 중...' : '👖 하의 생성 중...');
-
-  try {
-    const body = {};
-    if (topPath)    body.top_image_path    = topPath;
-    if (bottomPath) body.bottom_image_path = bottomPath;
-
-    const resp = await fetch('/tryon', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-
-    const reader  = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const data = JSON.parse(line.slice(6));
-        if (data.error) { showLoading(false); return; }
-        if (data.step === 'tops') {
-          showCapture(`data:${data.mime};base64,` + data.result_b64, '👕 상의 완료');
-          if (hasBoth) showLoading(true, '👖 하의 생성 중...');
-        } else if (data.step === 'bottoms') {
-          showCapture(`data:${data.mime};base64,` + data.result_b64, '✨ Try-On 완료');
-        } else if (data.step === 'done') {
-          showLoading(false);
-        }
-      }
+  if (pct >= 100) {
+    trigger(el.dataset.action, el.dataset.val);
+    for (const h of ['left','right']) {
+      if (dwell[h].el === el) { dwell[h].el = null; dwell[h].t = 0; }
     }
-  } catch (_) {
-  } finally {
-    showLoading(false);
-    _busy = false;
+    if (bar) bar.style.width = '0%';
+    el.classList.remove('dwelling');
+    cur?.classList.remove('dwelling');
   }
 }
 
-// ── UI helpers ────────────────────────────────────────────────────────
-function showCapture(src, label) {
-  captureImg.src = src;
-  captureImg.style.display = 'block';
-  capturePh.style.display  = 'none';
-  captureBadge.textContent = label;
-  captureBadge.style.display = 'block';
+// ── Mouse click (same dispatch as dwell) ───────────────
+document.addEventListener('click', e => {
+  const el = e.target.closest('button[data-action]');
+  if (!el || el.disabled) return;
+  if (BLOCKING.has(S.phase)) return;
+  trigger(el.dataset.action, el.dataset.val);
+});
+
+// ── Cursor coord mapping ───────────────────────────────
+// #cam: 카메라 프레임(iw×ih, 가로형)을 width:100vh/height:100vw 박스에
+// object-fit:cover 로 채운 뒤 rotate(270deg) scaleX(-1) 한다.
+// 단순 stretch 가 아니라 cover 의 crop·스케일을 반영해야 좌우 끝이 어긋나지 않는다.
+// u = 카메라 가로비율(nx), v = 세로비율(ny)
+function camToScreen([u, v]) {
+  const cam = $('cam');
+  const iw = cam.naturalWidth  || 640;   // 카메라 프레임 가로
+  const ih = cam.naturalHeight || 480;   // 카메라 프레임 세로
+  const VW = window.innerWidth, VH = window.innerHeight;
+  const s = Math.max(VH / iw, VW / ih);  // object-fit: cover 스케일 (박스 = VH×VW)
+  return [
+    VW / 2 + ih * s * (v - 0.5),  // 가로축 (회전으로 카메라 세로→화면 가로)
+    VH / 2 + iw * s * (u - 0.5),  // 세로축 (카메라 가로→화면 세로, 미러 반영)
+  ];
 }
-function showLoading(on, msg = '⏳ 처리 중...') {
-  captureLoad.textContent   = msg;
-  captureLoad.style.display = on ? 'flex' : 'none';
+function moveCursor(id, norm) {
+  const el = $(id);
+  if (!norm) { el.style.display = 'none'; return; }
+  const [sx, sy] = camToScreen(norm);
+  el.style.display = 'block';
+  el.style.left = sx + 'px';
+  el.style.top  = sy + 'px';
 }
 
-async function doCancel() {
-  await fetch('/pose_reset', { method: 'POST' });
-  btnCancel.style.display   = 'none';
-  btnTopsT.style.display    = 'none';
-  btnBottomsT.style.display = 'none';
-  _tryonTop = null; _tryonBottom = null;
+// ── Pose poll ──────────────────────────────────────────
+async function pollPose() {
+  try {
+    const d = await fetch('/pose_poll').then(r => r.json());
+    moveCursor('cursor-l', d.lw);
+    moveCursor('cursor-r', d.rw);
+
+    if (!BLOCKING.has(S.phase)) {
+      if (d.lw) { const [x,y] = camToScreen(d.lw); stepDwell('left',  x, y); }
+      else clearDwell('left');
+      if (d.rw) { const [x,y] = camToScreen(d.rw); stepDwell('right', x, y); }
+      else clearDwell('right');
+    }
+
+    $('zone-box').classList.toggle('in-zone', d.in_zone);
+    if (S.phase === 'idle') {
+      if (d.in_zone) {
+        $('zone-msg').classList.add('hidden');
+        setStatus('Zone 감지됨\n손으로 버튼을 눌러보세요');
+      } else {
+        $('zone-msg').classList.remove('hidden');
+        setStatus('화면 앞에 서서\n전신을 인식시켜 주세요');
+      }
+    } else if (S.phase === 'results' || S.phase === 'vton_done') {
+      $('zone-msg').classList.add('hidden');
+    }
+  } catch(_) {}
 }
 
-btnCancel.addEventListener('click', doCancel);
-btnTopsT.addEventListener('click',    () => { if (!_busy) { _busy = true; doTryon(_tryonTop, null); } });
-btnBottomsT.addEventListener('click', () => { if (!_busy) { _busy = true; doTryon(null, _tryonBottom); } });
-
-setInterval(pollPose, 50);
+setInterval(pollPose, 40);
 </script>
 </body>
 </html>
