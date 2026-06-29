@@ -20,7 +20,7 @@
       --sub:         #94a3b8;
       --gold:        #fbbf24;
       --purple:      #a78bfa;
-      --rail-w:      172px;
+      --rail-w:      min(248px, calc(26vw - 16px));
       --bar-h:       58px;
     }
 
@@ -116,15 +116,15 @@
       background: transparent;
       display: flex; flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 16px;
-      padding: 24px 14px;
+      justify-content: flex-start;
+      gap: 14px;
+      padding: 6px 12px 14px;
     }
     #left-rail  { left: 0; }
     #right-rail { right: 0; }
 
     .rail-label {
-      font-size: 0.64rem; font-weight: 600;
+      font-size: 1rem; font-weight: 600;
       letter-spacing: 1px; text-transform: uppercase;
       color: var(--teal); text-align: center; margin-bottom: 2px;
     }
@@ -134,12 +134,12 @@
     /* ── Pills (vertical in rail) ────────────────────────── */
     .pill-group-v { display: flex; flex-direction: column; gap: 5px; width: 100%; }
     .pill {
-      width: 100%; height: 38px;
-      border-radius: 12px;
+      width: 100%; height: 54px;
+      border-radius: 14px;
       border: 1.5px solid var(--border);
       background: rgba(255,255,255,0.04);
       color: var(--sub);
-      font-family: inherit; font-size: 0.82rem; font-weight: 500;
+      font-family: inherit; font-size: 1.35rem; font-weight: 500;
       cursor: pointer; position: relative; overflow: hidden;
       transition: color .2s, border-color .2s, background .2s;
     }
@@ -152,11 +152,11 @@
 
     /* ── Mic button ──────────────────────────────────────── */
     #btn-mic {
-      width: 54px; height: 54px; flex-shrink: 0;
+      width: 68px; height: 68px; flex-shrink: 0;
       border-radius: 50%;
       border: 1.5px solid var(--border);
       background: rgba(255,255,255,0.05);
-      color: var(--sub); font-size: 1.3rem;
+      color: var(--sub); font-size: 1.7rem;
       cursor: pointer; position: relative; overflow: hidden;
       transition: border-color .2s;
       display: flex; align-items: center; justify-content: center;
@@ -169,17 +169,17 @@
 
     /* Text query input (compact, for fallback typing) */
     #text-input {
-      width: 100%; height: 34px;
+      width: 100%; height: 44px;
       border-radius: 10px;
       border: 1.5px solid var(--border);
       background: rgba(255,255,255,0.05);
       color: var(--text);
-      font-family: inherit; font-size: 0.72rem;
-      padding: 0 10px;
+      font-family: inherit; font-size: 1rem;
+      padding: 0 12px;
       outline: none;
       transition: border-color .2s;
     }
-    #text-input::placeholder { color: var(--muted); font-size: 0.68rem; }
+    #text-input::placeholder { color: var(--muted); font-size: 0.92rem; }
     #text-input:focus { border-color: rgba(52,211,153,0.4); }
 
     /* 음성 인식 결과: 가운데 박스 아래쪽 반투명 오버레이 */
@@ -201,10 +201,10 @@
 
     /* ── Right rail buttons ──────────────────────────────── */
     #btn-recommend {
-      width: 100%; height: 52px;
+      width: 100%; height: 66px;
       border-radius: 14px; border: none;
       background: var(--teal); color: #052e16;
-      font-family: inherit; font-size: 0.95rem; font-weight: 700;
+      font-family: inherit; font-size: 1.35rem; font-weight: 700;
       cursor: pointer; position: relative; overflow: hidden;
       transition: opacity .2s, box-shadow .2s;
       box-shadow: 0 4px 20px rgba(52,211,153,0.30);
@@ -215,11 +215,11 @@
 
     .nav-row { display: flex; gap: 6px; width: 100%; }
     .nav-btn {
-      flex: 1; height: 44px;
+      flex: 1; height: 58px;
       border-radius: 10px;
       border: 1px solid var(--border);
       background: rgba(255,255,255,0.04);
-      color: var(--sub); font-size: 1rem;
+      color: var(--sub); font-size: 1.5rem;
       cursor: pointer; position: relative; overflow: hidden;
       transition: border-color .2s, color .2s;
     }
@@ -227,11 +227,11 @@
     .nav-btn:not(:disabled):hover { border-color: var(--gold); color: var(--gold); }
 
     #btn-tryon {
-      width: 100%; height: 48px;
+      width: 100%; height: 60px;
       border-radius: 12px;
       border: 1.5px solid var(--purple);
       background: rgba(167,139,250,0.12);
-      color: var(--purple); font-size: 0.88rem; font-weight: 600;
+      color: var(--purple); font-size: 1.35rem; font-weight: 600;
       cursor: pointer; position: relative; overflow: hidden;
       transition: box-shadow .2s;
       font-family: inherit;
@@ -240,22 +240,24 @@
     #btn-tryon.dwelling { box-shadow: 0 0 20px rgba(167,139,250,0.4); }
 
     #status-text {
-      text-align: center; font-size: 0.70rem; font-weight: 500;
-      color: var(--teal); min-height: 16px;
+      text-align: center; font-size: 1rem; font-weight: 500;
+      color: var(--teal); min-height: 20px;
       padding: 0 2px; line-height: 1.5;
     }
 
     /* ── Results strip ───────────────────────────────────── */
     #results-strip {
       position: fixed;
-      top: calc(var(--bar-h) + 12px);
-      right: calc(var(--rail-w) + 8px);
-      width: 104px;
+      bottom: 14px;
+      right: 12px;
+      width: min(252px, calc(26vw - 24px));
+      max-height: calc(100vh - var(--bar-h) - 28px);
       z-index: 15;
       background: transparent;
       display: flex; flex-direction: column;
       align-items: stretch;
       gap: 10px; padding: 0;
+      overflow-y: auto;
       transition: opacity .3s, transform .3s;
     }
     #results-strip.hidden { opacity: 0; pointer-events: none; transform: translateY(-10px); }
@@ -274,16 +276,16 @@
       overflow: hidden;
     }
     .rcard-h img {
-      width: 100%; height: 96px;
+      width: 100%; height: 150px;
       object-fit: cover; display: block; background: #0f0f18;
     }
-    .rcard-h-body { padding: 4px 6px 5px; }
+    .rcard-h-body { padding: 6px 9px 8px; }
     .rcard-h-cat {
-      font-size: 0.52rem; font-weight: 700;
+      font-size: 0.85rem; font-weight: 700;
       letter-spacing: .8px; text-transform: uppercase; color: var(--teal);
     }
     .rcard-h-name {
-      font-size: 0.60rem; color: var(--sub);
+      font-size: 0.95rem; color: var(--sub);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       margin-top: 1px;
     }
@@ -292,22 +294,23 @@
       align-items: center; justify-content: center; gap: 6px;
     }
     #results-badge {
-      font-size: 0.68rem; color: var(--sub);
+      font-size: 0.95rem; color: var(--sub);
       background: rgba(255,255,255,0.06);
       border-radius: 20px; padding: 2px 10px;
       white-space: nowrap;
     }
     .strip-empty {
       display: flex; align-items: center; justify-content: center;
-      flex: 1; font-size: 0.72rem; color: var(--muted);
+      flex: 1; font-size: 1rem; color: var(--muted);
     }
 
     /* ── VTON float (overlays left rail when active) ─────── */
     #vton-float {
       position: fixed;
-      left: calc(var(--rail-w) + 12px);
-      bottom: 12px; top: auto;
-      width: 240px; max-height: 64vh;
+      left: 12px;
+      bottom: 14px; top: auto;
+      width: min(272px, calc(26vw - 24px));
+      max-height: 74vh;
       z-index: 25;
       background: transparent;
       display: flex; flex-direction: column;
@@ -322,10 +325,10 @@
       flex-shrink: 0;
     }
     .vton-header-label {
-      font-size: 0.64rem; font-weight: 600;
+      font-size: 1rem; font-weight: 600;
       letter-spacing: 1px; text-transform: uppercase; color: var(--teal);
     }
-    #vton-step-label { font-size: 0.64rem; color: var(--sub); }
+    #vton-step-label { font-size: 0.9rem; color: var(--sub); }
 
     #vton-body {
       min-height: 0;
@@ -334,7 +337,7 @@
       padding: 10px; gap: 8px;
     }
     #vton-img {
-      width: 100%; height: auto; max-height: 52vh;
+      width: 100%; height: auto; max-height: 62vh;
       object-fit: contain; border-radius: 10px; display: none;
     }
     #vton-spinner {
@@ -349,10 +352,10 @@
       display: flex; flex-direction: column;
       align-items: center; gap: 8px; padding: 20px 8px;
     }
-    .vton-ph-icon { font-size: 1.8rem; opacity: 0.28; }
-    .vton-ph-text { font-size: 0.68rem; color: var(--muted); text-align: center; line-height: 1.6; }
+    .vton-ph-icon { font-size: 2.4rem; opacity: 0.28; }
+    .vton-ph-text { font-size: 1rem; color: var(--muted); text-align: center; line-height: 1.6; }
     #vton-status-label {
-      font-size: 0.63rem; color: var(--teal);
+      font-size: 0.95rem; color: var(--teal);
       text-align: center; padding: 4px 8px 8px; flex-shrink: 0;
     }
 
