@@ -121,7 +121,7 @@
       padding: 6px 12px 14px;
     }
     #left-rail  { left: 0; }
-    #right-rail { right: 0; }
+    #right-rail { right: 0; padding-top: 130px; }
 
     .rail-label {
       font-size: 1rem; font-weight: 600;
@@ -309,8 +309,8 @@
       position: fixed;
       left: 12px;
       bottom: 14px; top: auto;
-      width: min(272px, calc(26vw - 24px));
-      max-height: 74vh;
+      width: 49vw; max-width: 720px;
+      max-height: 49vh;
       z-index: 25;
       background: transparent;
       display: flex; flex-direction: column;
@@ -331,22 +331,26 @@
     #vton-step-label { font-size: 0.9rem; color: var(--sub); }
 
     #vton-body {
-      min-height: 0;
+      flex: 1; min-height: 160px;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-end;
+      align-items: center; justify-content: center;
       padding: 10px; gap: 8px;
     }
     #vton-img {
-      width: 100%; height: auto; max-height: 62vh;
+      width: 100%; height: auto; max-height: 40vh;
       object-fit: contain; border-radius: 10px; display: none;
     }
+    #vton-loading {
+      display: none; flex-direction: column;
+      align-items: center; gap: 16px;
+    }
+    .vton-loading-text { font-size: 1rem; font-weight: 500; color: var(--teal); }
     #vton-spinner {
-      width: 28px; height: 28px;
-      border: 3px solid rgba(255,255,255,0.08);
+      width: 52px; height: 52px;
+      border: 4px solid rgba(255,255,255,0.08);
       border-top-color: var(--teal);
       border-radius: 50%;
       animation: spin .75s linear infinite;
-      display: none;
     }
     #vton-placeholder {
       display: flex; flex-direction: column;
@@ -515,7 +519,10 @@
       <div class="vton-ph-icon">👚</div>
       <div class="vton-ph-text">입어보기 버튼을<br>눌러주세요</div>
     </div>
-    <div id="vton-spinner"></div>
+    <div id="vton-loading">
+      <div id="vton-spinner"></div>
+      <div class="vton-loading-text">가상 피팅 생성 중...</div>
+    </div>
     <img id="vton-img" alt="VTON 결과">
   </div>
   <div id="vton-status-label"></div>
@@ -554,12 +561,6 @@
     <button id="btn-tryon" data-action="tryon" disabled>◈ 입어보기
       <div class="dwell-bar purple"></div>
     </button>
-  </div>
-
-  <div class="rail-divider"></div>
-
-  <div class="rail-section">
-    <div id="status-text">화면 앞에 서서<br>전신을 인식시켜 주세요</div>
   </div>
 </div>
 
@@ -618,7 +619,7 @@ fetch('https://api.open-meteo.com/v1/forecast?latitude=37.57&longitude=126.98&cu
   }).catch(() => { $('weather').textContent = ''; });
 
 // ── Status ─────────────────────────────────────────────
-function setStatus(msg) { $('status-text').innerHTML = msg.replace('\n', '<br>'); }
+function setStatus(msg) { const el = $('status-text'); if (el) el.innerHTML = msg.replace('\n', '<br>'); }
 
 // ── Toggles ────────────────────────────────────────────
 function applyToggle(action, val) {
@@ -827,22 +828,23 @@ async function prefetchTryon() {
 // 현재 VTON state를 패널에 반영(패널이 열려있을 때만)
 function renderVton() {
   if ($('vton-float').classList.contains('hidden')) return;
-  const ph = $('vton-placeholder'), img = $('vton-img'), sp = $('vton-spinner');
+  const ph = $('vton-placeholder'), img = $('vton-img'), ld = $('vton-loading');
+  const hide = el => { el.style.display = 'none'; };
   $('vton-step-label').textContent = S.vtonStep || '';
   if (S.vtonStatus === 'done') {
     img.src = S.vtonImg; img.style.display = 'block';
-    sp.style.display = 'none'; ph.style.display = 'none';
+    hide(ld); hide(ph);
     $('vton-status-label').textContent = '완료 ✓';
   } else if (S.vtonStatus === 'error') {
-    sp.style.display = 'none';
+    hide(ld); hide(ph);
     $('vton-status-label').textContent = '오류: ' + (S.vtonError || '');
   } else if (S.vtonStatus === 'none') {
-    sp.style.display = 'none'; img.style.display = 'none'; ph.style.display = 'flex';
+    hide(ld); hide(img); ph.style.display = 'flex';
     $('vton-status-label').textContent = '피팅 대상 없음';
   } else { // loading
-    ph.style.display = 'none';
-    if (S.vtonImg) { img.src = S.vtonImg; img.style.display = 'block'; sp.style.display = 'none'; }
-    else { img.style.display = 'none'; sp.style.display = 'block'; }
+    hide(ph);
+    if (S.vtonImg) { img.src = S.vtonImg; img.style.display = 'block'; hide(ld); }
+    else { hide(img); ld.style.display = 'flex'; }
     $('vton-status-label').textContent = '처리중...';
   }
 }
