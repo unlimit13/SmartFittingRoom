@@ -16,8 +16,7 @@ MODELS_DIR = os.path.join(ROOT, "models")
 DATA_DIR = os.path.join(ROOT, "data")
 
 MODELS_READY = (
-    os.path.exists(os.path.join(MODELS_DIR, "yolov8n.onnx"))
-    and os.path.exists(os.path.join(MODELS_DIR, "clip_image_encoder.onnx"))
+    os.path.exists(os.path.join(MODELS_DIR, "clip_image_encoder.onnx"))
     and os.path.exists(os.path.join(MODELS_DIR, "clip_preprocessor", "visual_projection.npy"))
 )
 DATA_READY = os.path.exists(os.path.join(DATA_DIR, "faiss_index", "index.bin"))

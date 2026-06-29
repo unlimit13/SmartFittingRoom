@@ -16,12 +16,12 @@
 
 ## 주요 기능
 
-- **실시간 의류 감지** — YOLOv8n으로 사람(COCO class 0)을 감지 후 바운딩 박스를 상의/하의/신발 영역으로 수직 분할
+- **실시간 의류 감지** — MediaPipe Pose로 사람을 감지하여 랜드마크 기반 바운딩 박스를 상의/하의/신발 영역으로 수직 분할
 - **앵커 카테고리 선택** — 상의(tops) 또는 하의(bottoms) 중 하나를 앵커로 지정하여 CLIP 이미지 임베딩 기반 유사 검색 수행
 - **혼합 점수 기반 코디 세트 추천** — 앵커 CLIP 벡터로 tops/bottoms/shoes를 카테고리별 독립 검색 후 CLIP유사도+텍스트유사도+색상호환성 혼합 점수로 카테고리별 Top-1 선정, 1개 코디 세트(상의+하의+신발) 추천
 - **색상 팔레트 추출** — OpenCV K-means로 앵커 크롭 영역의 지배색 3개를 추출하여 UI에 표시
 - **무신사 상품 QR코드** — 추천된 각 상품에서 바로 무신사 구매 페이지로 이동 가능
-- **감지 스트림 분리** — `/detection_feed`로 YOLOv8n 감지 오버레이 MJPEG 스트림 별도 제공
+- **감지 스트림 분리** — `/detection_feed`로 MediaPipe Pose 감지 오버레이 MJPEG 스트림 별도 제공
 - **포즈 기반 자동 트리거** — MediaPipe Pose(model_complexity=0)로 관절 추적, 화면 중앙 존에 3초 유지 시 추천 자동 발동, 홀드 진행바·잔여 시간 시각화
 - **가상 피팅(Virtual Try-On)** — fal-ai/fashn/tryon v1.6으로 추천 상의/하의를 착용자에게 순차 합성(tops → bottoms), SSE 스트리밍으로 단계별 결과 표시
 - **분산 Edge AI** (Phase 2 — 계획됨, 미구현) — 4대 RPi5가 역할 분담하는 마이크로서비스 파이프라인
@@ -35,7 +35,7 @@
 ```
 [웹캠]
   ↓
-[YOLOv8n ONNX] ── person 감지(COCO class 0) → 수직 분할
+[MediaPipe Pose] ── person 감지(랜드마크 → 바운딩박스) → 수직 분할
   ↓ anchor_category 크롭 (tops 또는 bottoms)   ↓
 [CLIP ViT-B/32 ONNX]                        [OpenCV K-means]
  CLS토큰 + visual_projection                  색상 팔레트 추출 (3색)
@@ -55,7 +55,7 @@
 ### Phase 2 — 분산 Edge AI (4대 RPi, 계획됨 — 미구현)
 
 ```
-RPi1 (카메라 + YOLO + Web UI)
+RPi1 (카메라 + MediaPipe + Web UI)
   → RPi2 (CLIP 이미지 임베딩 + ko-sroberta 텍스트 임베딩)
     → RPi3 (FAISS 검색 + 텍스트 리랭킹)
       → RPi4 (결과 집계 + 색상 호환성 + 최종 응답)
@@ -67,7 +67,7 @@ RPi1 (카메라 + YOLO + Web UI)
 
 | 역할 | 기술 |
 |---|---|
-| 의류 감지 | YOLOv8n (ONNX) |
+| 의류 감지 | MediaPipe Pose (model_complexity=0) |
 | 이미지 임베딩 | CLIP ViT-B/32 (ONNX) |
 | 한국어 텍스트 임베딩 | `jhgan/ko-sroberta-multitask` (ONNX) |
 | 유사도 검색 | FAISS (CPU, IndexFlatL2) |
@@ -100,7 +100,7 @@ RPi1 (카메라 + YOLO + Web UI)
 ├── src/
 │   ├── app.py                 # Flask 진입점 (/, /detection_feed, /pose_poll, /pose_reset, /recommend, /tryon, /product_image, /health)
 │   ├── camera.py              # 웹캠 캡처 + MJPEG 스트리밍 (백그라운드 스레드)
-│   ├── detector.py            # YOLOv8n person 감지 + 수직 분할 (tops/bottoms/shoes)
+│   ├── detector.py            # MediaPipe Pose person 감지 + 수직 분할 (tops/bottoms/shoes)
 │   ├── embedder.py            # CLIP ViT-B/32 이미지 임베딩 (CLS + visual_projection → 512-dim)
 │   ├── text_encoder.py        # ko-sroberta Mean Pooling 한국어 텍스트 임베딩 (768-dim)
 │   ├── searcher.py            # FAISS 유사도 검색 (카테고리 필터, over-fetch k×3)
@@ -124,7 +124,6 @@ RPi1 (카메라 + YOLO + Web UI)
 ├── musinsa_out/
 │   └── result.json            # 크롤러 원본 출력 (snap_id 기반 코디 세트)
 ├── models/
-│   ├── yolov8n.onnx               # ~13MB
 │   ├── clip_image_encoder.onnx    # ~310MB
 │   ├── clip_preprocessor/         # visual_projection.npy (768×512)
 │   └── ko_sroberta/               # ONNX + tokenizer (~460MB)
