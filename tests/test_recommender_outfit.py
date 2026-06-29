@@ -1,3 +1,7 @@
+"""
+R-07: 코디 추천 — Recommender.recommend_outfit()가 코디 세트 1개를 반환
+      (outfits=[{tops, bottoms, shoes}], 각 슬롯은 product_id/name/url/image_path/qr_b64).
+"""
 import json
 import os
 import sys

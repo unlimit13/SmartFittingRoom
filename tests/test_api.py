@@ -1,5 +1,5 @@
 """
-R-07: /recommend API — Top-3 결과 포함 JSON 반환
+R-07: /recommend API — 코디 세트 1개 포함 JSON 반환 (tops/bottoms/shoes)
 R-08: QR코드 생성 — base64 PNG 포함
 R-09: 전체 응답 시간 ≤ 2000ms
 """
