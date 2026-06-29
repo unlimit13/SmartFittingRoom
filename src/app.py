@@ -40,7 +40,7 @@ _person_url_future: concurrent.futures.Future | None = None
 _tops_result_url: str | None = None   # reused as person image for bottoms try-on
 
 _pose_lock      = threading.Lock()
-_pose_state     = {"in_zone": False, "hold_pct": 0.0, "triggered": False, "disabled": False, "rw": None, "joints": None}
+_pose_state     = {"in_zone": False, "hold_pct": 0.0, "triggered": False, "disabled": False, "rw": None, "lw": None, "joints": None}
 _pose_triggered = False   # consumed once by /pose_poll
 
 
@@ -59,6 +59,7 @@ def _pose_loop():
                 _pose_state["triggered"] = state["triggered"]
                 _pose_state["disabled"]  = state["disabled"]
                 _pose_state["rw"]        = state["rw"]
+                _pose_state["lw"]        = state["lw"]
                 _pose_state["joints"]    = state["joints"]
                 if state["triggered"]:
                     _pose_triggered = True
@@ -127,14 +128,18 @@ def pose_poll():
         "triggered": triggered,
         "disabled":  state["disabled"],
         "rw":        state.get("rw"),
+        "lw":        state.get("lw"),
     })
 
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
     body       = request.get_json(silent=True) or {}
+    gender     = body.get("gender", "")
     text_query = body.get("text_query", "")
-    anchor_category = body.get("anchor_category", "bottoms")
+    if gender:
+        text_query = (gender + " " + text_query).strip()
+    anchor_category = body.get("anchor_category", "tops")
     use_camera = body.get("use_camera", True)
 
     if use_camera:
@@ -144,6 +149,9 @@ def recommend():
     else:
         frame = np.zeros((480, 640, 3), dtype=np.uint8)
 
+    # 카메라가 회전되어 설치됨 → 캡처 프레임도 동일하게 90도 회전
+    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+
     global _person_url_future, _tops_result_url
     _tops_result_url = None
     _person_url_future = _upload_executor.submit(tryon_mod.upload_frame, frame.copy())
@@ -152,15 +160,25 @@ def recommend():
     result = _recommender.recommend_outfit(frame, anchor_category, text_query=text_query)
     elapsed_ms = int((time.time() - t0) * 1000)
 
+    if not result["detected"]:
+        return jsonify({"error": "사람이 감지되지 않았습니다. 전신이 보이도록 서주세요."})
+
     _, buf = cv2.imencode(".jpg", result["annotated_frame"], [cv2.IMWRITE_JPEG_QUALITY, 70])
     annotated_b64 = base64.b64encode(buf).decode()
 
+    captured_top_b64 = None
+    top_crop = result.get("tops_crop")
+    if top_crop is not None and top_crop.size:
+        _, tbuf = cv2.imencode(".jpg", top_crop, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        captured_top_b64 = base64.b64encode(tbuf).decode()
+
     return jsonify({
-        "detected":      result["detected"],
-        "palette":       result["palette"],
-        "outfits":       result["outfits"],
-        "annotated_b64": annotated_b64,
-        "elapsed_ms":    elapsed_ms,
+        "detected":         result["detected"],
+        "palette":          result["palette"],
+        "outfits":          result["outfits"],
+        "annotated_b64":    annotated_b64,
+        "captured_top_b64": captured_top_b64,
+        "elapsed_ms":       elapsed_ms,
     })
 
 

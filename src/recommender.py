@@ -88,4 +88,5 @@ class Recommender:
             "annotated_frame": annotated,
             "palette": palette,
             "outfits": [outfit],
+            "tops_crop": crops.get("tops"),
         }
