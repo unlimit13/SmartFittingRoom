@@ -24,8 +24,11 @@ build/
 .env.*
 !.env.example
 
-# Claude Code 설정 (커밋 제외)
-.claude/
+# Claude Code 설정 — 개인 설정(settings.local.json)은 커밋 제외,
+# 공유 hook/설정(settings.json + hooks/)은 추적하여 클론에 따라가게 함
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
 
 # macOS
 .DS_Store
