@@ -161,7 +161,12 @@
       transition: border-color .2s;
       display: flex; align-items: center; justify-content: center;
     }
-    #btn-mic.listening { border-color: var(--teal); animation: mic-glow 1s ease-in-out infinite; }
+    #btn-mic.listening {
+      border-color: var(--teal);
+      background: var(--teal);
+      color: #052e16;
+      animation: mic-glow 1s ease-in-out infinite;
+    }
     @keyframes mic-glow {
       0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.5); }
       50%      { box-shadow: 0 0 0 10px rgba(52,211,153,0); }
@@ -365,13 +370,13 @@
 
     /* ── Dwell bar ───────────────────────────────────────── */
     .dwell-bar {
-      position: absolute; bottom: 0; left: 0;
-      width: 0%; height: 3px;
-      background: var(--teal);
+      position: absolute; top: 0; left: 0;
+      width: 0%; height: 100%;
+      background: rgba(52,211,153,0.50);
       pointer-events: none;
     }
-    .dwell-bar.gold   { background: var(--gold); }
-    .dwell-bar.purple { background: var(--purple); }
+    .dwell-bar.gold   { background: rgba(251,191,36,0.45); }
+    .dwell-bar.purple { background: rgba(167,139,250,0.45); }
 
     /* ── Countdown overlay ───────────────────────────────── */
     #countdown-overlay {
