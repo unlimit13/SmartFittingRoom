@@ -6,7 +6,6 @@ import io
 import json
 import os
 
-import numpy as np
 import qrcode
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -49,15 +48,25 @@ class Recommender:
                 })
         return result
 
-    def _shoes_from_snap(self, tops_product_ids: list, gender: str = "") -> list:
-        """Return shoes tied to the given tops via snap_id lookup in snap_outfits.json."""
+    def _find_snap(self, product_ids: list, gender: str = "") -> dict | None:
+        """Return the first curated snap outfit whose snap_id matches a product's own snap_id field."""
         gender_prefix = "men" if "남" in gender else ("women" if "여" in gender else "")
-        for snap_id, outfit in self._snap_outfits.items():
+        for pid in product_ids:
+            item = self.searcher._meta.get(pid)
+            snap_id = item.get("snap_id") if item else None
+            if not snap_id:
+                continue
             if gender_prefix and not snap_id.startswith(gender_prefix):
                 continue
-            if any(pid in outfit.get("tops", []) for pid in tops_product_ids):
-                return self._resolve_products(outfit.get("shoes", []))
-        return []
+            outfit = self._snap_outfits.get(snap_id)
+            if outfit:
+                return outfit
+        return None
+
+    def _shoes_from_snap(self, product_ids: list, gender: str = "") -> list:
+        """Return shoes from the curated snap outfit tied to the given product(s)' own snap_id."""
+        outfit = self._find_snap(product_ids, gender)
+        return self._resolve_products(outfit.get("shoes", [])) if outfit else []
 
     def recommend_outfit(self, frame, anchor_category: str, text_query: str = "", gender: str = "") -> dict:
         detection = self.detector.detect(frame)
@@ -87,23 +96,32 @@ class Recommender:
                 for r in ranked
             ]
 
-        tops_items = get_items("tops")
-        shoes_items = self._shoes_from_snap([t["product_id"] for t in tops_items], gender)
-        if not shoes_items:
-            shoes_items = get_items("shoes")
-
         if anchor_category == "bottoms":
-            outfit = {
-                "tops":    tops_items,
-                "bottoms": [],
-                "shoes":   shoes_items,
-            }
+            anchor_items = get_items("bottoms")
+            snap = self._find_snap([i["product_id"] for i in anchor_items], gender)
+            if snap:
+                tops_items  = self._resolve_products(snap.get("tops",  []))
+                shoes_items = self._resolve_products(snap.get("shoes", []))
+            else:
+                tops_items  = get_items("tops")
+                shoes_items = get_items("shoes")
+            outfit_bottoms = []
         else:
-            outfit = {
-                "tops":    tops_items,
-                "bottoms": get_items("bottoms"),
-                "shoes":   shoes_items,
-            }
+            anchor_items = get_items("tops")
+            tops_items   = anchor_items
+            snap = self._find_snap([i["product_id"] for i in anchor_items], gender)
+            if snap:
+                outfit_bottoms = self._resolve_products(snap.get("bottoms", []))
+                shoes_items    = self._resolve_products(snap.get("shoes",   []))
+            else:
+                outfit_bottoms = get_items("bottoms")
+                shoes_items    = get_items("shoes")
+
+        outfit = {
+            "tops":    tops_items,
+            "bottoms": outfit_bottoms,
+            "shoes":   shoes_items,
+        }
 
         return {
             "detected": persons_found,

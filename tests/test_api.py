@@ -128,7 +128,7 @@ def test_recommend_anchor_category_default(client):
         content_type="application/json",
     )
     call_args = app_module._recommender.recommend_outfit.call_args
-    assert call_args.args[1] == "bottoms"
+    assert call_args.args[1] == "tops"
 
 
 def test_recommend_response_time(client):
