@@ -1,6 +1,8 @@
 """
-R-07: 코디 추천 — Recommender.recommend_outfit()가 코디 세트 1개를 반환
-      (outfits=[{tops, bottoms, shoes}], 각 슬롯은 product_id/name/url/image_path/qr_b64).
+R-07: 코디 추천 — Recommender.recommend_outfit()가 최대 3개의 코디 후보를 반환
+      (outfits=[{tops, bottoms, shoes}, ...] 최대 NUM_CANDIDATES개,
+       각 슬롯은 product_id/name/url/image_path/qr_b64). 검색 결과가 부족하면
+       그보다 적은 수의 후보만 반환한다.
 
 하의기준(anchor='bottoms') 계약:
   - outfit["bottoms"] == []  (DB 아이템 아닌 사용자 캡처)
@@ -34,10 +36,11 @@ META = {
     "musinsa_008": {"product_id": "musinsa_008", "gender": "남", "snap_id": "snap3", "name": "조거팬츠", "url": "https://musinsa.com/8", "image_path": "bottoms/musinsa_008.jpg"},
     "musinsa_009": {"product_id": "musinsa_009", "gender": "남", "snap_id": "snap3", "name": "운동화", "url": "https://musinsa.com/9", "image_path": "shoes/musinsa_009.jpg"},
 }
-# searcher.search가 항상 반환하는 후보 (musinsa_001 — snap1 소속)
+# searcher.search가 항상 반환하는 후보 (snap1/snap2/snap3에 각각 소속, 점수 내림차순)
 CANDIDATES = [
     {**META["musinsa_001"], "category": "tops", "score": 0.95},
     {**META["musinsa_004"], "category": "tops", "score": 0.88},
+    {**META["musinsa_007"], "category": "tops", "score": 0.80},
 ]
 DUMMY_FRAME = np.zeros((480, 640, 3), dtype=np.uint8)
 DUMMY_CROP  = np.zeros((100, 100, 3), dtype=np.uint8)
@@ -77,7 +80,15 @@ def test_recommend_outfit_returns_outfits_key(rec):
     assert "outfits" in result
 
 
-def test_recommend_outfit_returns_one_set(rec):
+def test_recommend_outfit_returns_three_sets(rec):
+    """검색 결과가 충분하면 NUM_CANDIDATES(3)개의 코디 후보를 반환한다."""
+    result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
+    assert len(result["outfits"]) == 3
+
+
+def test_recommend_outfit_returns_fewer_sets_when_candidates_scarce(rec):
+    """검색 결과가 NUM_CANDIDATES보다 적으면 그 수만큼만 반환한다 (인덱스 에러 없음)."""
+    rec.searcher.search.return_value = CANDIDATES[:1]
     result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
     assert len(result["outfits"]) == 1
 
@@ -104,9 +115,10 @@ def test_recommend_outfit_products_have_required_fields(rec):
 
 
 def test_recommend_outfit_bottoms_anchor_bottoms_slot_is_empty(rec):
-    """하의기준: outfit['bottoms']는 빈 리스트여야 한다 (DB 아이템 표시 금지)."""
+    """하의기준: 모든 후보의 outfit['bottoms']는 빈 리스트여야 한다 (DB 아이템 표시 금지)."""
     result = rec.recommend_outfit(DUMMY_FRAME, "bottoms")
-    assert result["outfits"][0]["bottoms"] == []
+    for outfit in result["outfits"]:
+        assert outfit["bottoms"] == []
 
 
 def test_recommend_outfit_bottoms_anchor_tops_has_one_item(rec):
@@ -145,6 +157,18 @@ def test_recommend_outfit_tops_anchor_shoes_from_snap(rec):
     shoes = result["outfits"][0]["shoes"]
     assert len(shoes) == 1
     assert shoes[0]["product_id"] == "musinsa_003"
+
+
+def test_recommend_outfit_tops_anchor_candidates_use_own_snap(rec):
+    """상의기준: 2·3번째 후보도 각자의 anchor top과 매칭되는 snap(snap2/snap3)을 사용해야 한다."""
+    result = rec.recommend_outfit(DUMMY_FRAME, "tops")
+    outfits = result["outfits"]
+    assert outfits[1]["tops"][0]["product_id"] == "musinsa_004"
+    assert outfits[1]["bottoms"][0]["product_id"] == "musinsa_005"
+    assert outfits[1]["shoes"][0]["product_id"] == "musinsa_006"
+    assert outfits[2]["tops"][0]["product_id"] == "musinsa_007"
+    assert outfits[2]["bottoms"][0]["product_id"] == "musinsa_008"
+    assert outfits[2]["shoes"][0]["product_id"] == "musinsa_009"
 
 
 def test_recommend_outfit_tops_anchor_fallback_when_no_snap_match(rec):

@@ -1,5 +1,5 @@
 """
-R-07: /recommend API — 코디 세트 1개 포함 JSON 반환 (tops/bottoms/shoes)
+R-07: /recommend API — 최대 3개의 코디 후보 포함 JSON 반환 (tops/bottoms/shoes)
 R-08: QR코드 생성 — base64 PNG 포함
 R-09: 전체 응답 시간 ≤ 2000ms
 """
@@ -16,18 +16,20 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
+def _make_outfit(i):
+    return {
+        "tops":    [{"product_id": f"musinsa_{i}01", "name": "오버핏 린넨 셔츠", "url": f"https://www.musinsa.com/products/{i}01", "image_path": f"tops/musinsa_{i}01.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
+        "bottoms": [{"product_id": f"musinsa_{i}02", "name": "슬림핏 청바지", "url": f"https://www.musinsa.com/products/{i}02", "image_path": f"bottoms/musinsa_{i}02.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
+        "shoes":   [{"product_id": f"musinsa_{i}03", "name": "화이트 스니커즈", "url": f"https://www.musinsa.com/products/{i}03", "image_path": f"shoes/musinsa_{i}03.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
+    }
+
+
 def _make_mock_recommender():
     fake_outfit = {
         "detected": True,
         "annotated_frame": np.zeros((480, 640, 3), dtype=np.uint8),
         "palette": ["#3D6B9F", "#FFFFFF", "#000000"],
-        "outfits": [
-            {
-                "tops":    [{"product_id": "musinsa_001", "name": "오버핏 린넨 셔츠", "url": "https://www.musinsa.com/products/1", "image_path": "tops/musinsa_001.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
-                "bottoms": [{"product_id": "musinsa_002", "name": "슬림핏 청바지", "url": "https://www.musinsa.com/products/2", "image_path": "bottoms/musinsa_002.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
-                "shoes":   [{"product_id": "musinsa_003", "name": "화이트 스니커즈", "url": "https://www.musinsa.com/products/3", "image_path": "shoes/musinsa_003.jpg", "qr_b64": base64.b64encode(b"fakepng").decode()}],
-            },
-        ],
+        "outfits": [_make_outfit(1), _make_outfit(2), _make_outfit(3)],
     }
     rec = mock.MagicMock()
     rec.recommend_outfit.return_value = fake_outfit
@@ -106,14 +108,14 @@ def test_recommend_result_structure(client):
     assert "elapsed_ms" in data
 
 
-def test_recommend_returns_one_outfit(client):
+def test_recommend_returns_three_outfits(client):
     resp = client.post(
         "/recommend",
         data=json.dumps({"text_query": "", "use_camera": True}),
         content_type="application/json",
     )
     data = resp.get_json()
-    assert len(data["outfits"]) == 1
+    assert len(data["outfits"]) == 3
 
 
 def test_recommend_outfit_structure(client):
