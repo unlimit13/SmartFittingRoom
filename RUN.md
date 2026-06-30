@@ -117,7 +117,7 @@ gdown 1eJcoJdGNR4G3x8MMlnQXskF_hjQdIAGs -O models.zip
 unzip models.zip && rm models.zip
 
 # data 다운로드 (~200MB)
-gdown 18Rxms9PIlAAnDGxFXh22FMMesYxnhvnT -O data.zip
+gdown 1oVkg5RhHaNFbN4d2zy7_Ue4gAEYLuCb4 -O data.zip
 unzip data.zip && rm data.zip
 ```
 
@@ -144,7 +144,7 @@ models/
 
 ### [로컬] Step 2: 무신사 스냅 데이터 변환
 
-새 크롤러가 `musinsa_out/musinsa_db/result.json`과 이미지를 생성한 이후 실행합니다.
+크롤러가 `musinsa_out/result.json`과 이미지를 생성한 이후 실행합니다.
 
 ```bash
 # snap 기반 크롤링 (musinsa_out/result.json + 이미지 생성)
@@ -154,8 +154,10 @@ python scripts/convert_musinsa_out.py
 
 생성 파일: `data/musinsa_db/{tops,bottoms,shoes}/*.jpg|png` + `metadata.json`
 
-> **데이터 형식**: `musinsa_out/musinsa_db/result.json` (snap_id 기반 코디 세트) →
-> `data/musinsa_db/metadata.json` (상품별 플랫 목록)으로 변환됩니다.
+> **데이터 형식**: `musinsa_out/result.json` — 남녀 스냅이 한 파일에 통합되어 있으며
+> 각 스냅 레코드가 `gender`("male"/"female") 필드를 가집니다(snap_id 기반 코디 세트).
+> `scripts/convert_musinsa_out.py`가 이를 읽어 `gender`를 "남"/"여"로 변환하고
+> `data/musinsa_db/metadata.json`(상품별 플랫 목록)으로 변환합니다.
 
 ### [로컬] Step 3: FAISS 인덱스 + 스타일 벡터 빌드
 

@@ -122,7 +122,7 @@ RPi1 (카메라 + MediaPipe + Web UI)
 │       ├── id_map.json        # 인덱스 순서 → product_id 매핑
 │       └── style_vectors.npy  # 상품별 ko-sroberta 스타일 벡터 (118×768)
 ├── musinsa_out/
-│   └── result.json            # 크롤러 원본 출력 (snap_id 기반 코디 세트)
+│   └── result.json            # 크롤러 원본 출력 (snap_id 기반 코디 세트, 남녀 통합, gender 필드 포함)
 ├── models/
 │   ├── clip_image_encoder.onnx    # ~310MB
 │   ├── clip_preprocessor/         # visual_projection.npy (768×512)
@@ -165,7 +165,7 @@ pip install -r requirements.txt
 # 4. models / data 다운로드 (구글 드라이브, 최초 1회)
 pip install gdown
 gdown 1eJcoJdGNR4G3x8MMlnQXskF_hjQdIAGs -O models.zip
-gdown 18Rxms9PIlAAnDGxFXh22FMMesYxnhvnT -O data.zip
+gdown 1oVkg5RhHaNFbN4d2zy7_Ue4gAEYLuCb4 -O data.zip
 unzip models.zip && rm models.zip
 unzip data.zip   && rm data.zip
 
