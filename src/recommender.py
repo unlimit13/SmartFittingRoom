@@ -10,6 +10,7 @@ import qrcode
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 SNAP_OUTFITS_PATH = os.path.join(ROOT, "data", "musinsa_db", "snap_outfits.json")
+NUM_CANDIDATES = 3
 
 
 class Recommender:
@@ -96,38 +97,38 @@ class Recommender:
                 for r in ranked
             ]
 
-        if anchor_category == "bottoms":
-            anchor_items = get_items("bottoms")
-            snap = self._find_snap([i["product_id"] for i in anchor_items], gender)
+        show_anchor  = anchor_category != "bottoms"
+        anchor_field = "bottoms" if anchor_category == "bottoms" else "tops"
+        other_field  = "tops" if anchor_field == "bottoms" else "bottoms"
+
+        anchor_items = get_items(anchor_field, NUM_CANDIDATES)
+
+        other_pool = None
+        shoes_pool = None
+        outfits = []
+        for i, anchor_item in enumerate(anchor_items):
+            snap = self._find_snap([anchor_item["product_id"]], gender)
             if snap:
-                tops_items  = self._resolve_products(snap.get("tops",  []))
+                other_items = self._resolve_products(snap.get(other_field, []))
                 shoes_items = self._resolve_products(snap.get("shoes", []))
             else:
-                tops_items  = get_items("tops")
-                shoes_items = get_items("shoes")
-            outfit_bottoms = []
-        else:
-            anchor_items = get_items("tops")
-            tops_items   = anchor_items
-            snap = self._find_snap([i["product_id"] for i in anchor_items], gender)
-            if snap:
-                outfit_bottoms = self._resolve_products(snap.get("bottoms", []))
-                shoes_items    = self._resolve_products(snap.get("shoes",   []))
-            else:
-                outfit_bottoms = get_items("bottoms")
-                shoes_items    = get_items("shoes")
+                if other_pool is None:
+                    other_pool = get_items(other_field, NUM_CANDIDATES)
+                if shoes_pool is None:
+                    shoes_pool = get_items("shoes", NUM_CANDIDATES)
+                other_items = other_pool[i:i + 1]
+                shoes_items = shoes_pool[i:i + 1]
 
-        outfit = {
-            "tops":    tops_items,
-            "bottoms": outfit_bottoms,
-            "shoes":   shoes_items,
-        }
+            outfit = {"tops": [], "bottoms": [], "shoes": shoes_items}
+            outfit[anchor_field] = [anchor_item] if show_anchor else []
+            outfit[other_field]  = other_items
+            outfits.append(outfit)
 
         return {
             "detected": persons_found,
             "annotated_frame": annotated,
             "palette": palette,
-            "outfits": [outfit],
+            "outfits": outfits,
             "tops_crop": crops.get("tops"),
             "bottoms_crop": crops.get("bottoms") if anchor_category == "bottoms" else None,
         }
