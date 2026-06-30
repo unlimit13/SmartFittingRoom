@@ -1,9 +1,9 @@
 """
-무신사 스냅 - 남자 코디 상의/하의/신발 누끼 이미지 수집기
+무신사 스냅 - 여자 코디 상의/하의/신발 누끼 이미지 수집기
 ======================================================================
 파이프라인:
   1) 스냅 피드(최신순, 최대 MAX_SNAPS) → 스냅 id 수집
-  2) 스냅 상세 → 남자 코디만(model.gender=="MEN", 보조: 해시태그) + goods[].goodsNo
+  2) 스냅 상세 → 여자 코디만(model.gender=="WOMEN", 보조: 해시태그) + goods[].goodsNo
   3) 상품 페이지 → __NEXT_DATA__ 에서 카테고리(상의/하의/신발) + 갤러리 이미지 전부
      (대표컷 thumbnailImageUrl + 상세컷 goodsImages[]) — 개수 제한 없이 코디 단위로 수집
   4) 다운로드 후 [워커] 테두리 균일도(누끼) 사전필터로 통과분만 저장
@@ -210,14 +210,14 @@ def extract_hashtags(snap): return [t.get("name", "") for t in snap.get("tags", 
 def get_description(snap): return (snap.get("detail") or {}).get("content", "").strip()
 
 
-def is_mens(snap) -> bool:
-    return (snap.get("model") or {}).get("gender") == "MEN"
+def is_womens(snap) -> bool:
+    return (snap.get("model") or {}).get("gender") == "WOMEN"
 
 
 def process_snap(snap: dict) -> dict | None:
-    """남자 코디면 상의/하의/신발 상품의 갤러리를 받아 누끼 통과분만 저장."""
-    if not is_mens(snap):
-        return {"_drop": "not_mens"}
+    """여자 코디면 상의/하의/신발 상품의 갤러리를 받아 누끼 통과분만 저장."""
+    if not is_womens(snap):
+        return {"_drop": "not_womens"}
     snap_id = snap.get("id")
 
     by_slot = {"상의": [], "하의": [], "신발": []}   # slot -> 갤러리 순서 이미지 후보 목록

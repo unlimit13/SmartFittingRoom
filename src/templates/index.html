@@ -279,11 +279,14 @@
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
       overflow: hidden;
+      transition: border-color .2s;
     }
+    .rcard-h.hovered, .rcard-h:hover { border-color: var(--teal); }
     .rcard-h img {
-      width: 100%; height: 150px;
+      width: 100%; height: 180px;
       object-fit: cover; display: block; background: #0f0f18;
     }
+    .rcard-h.hovered img, .rcard-h:hover img { object-fit: contain; }
     .rcard-h-body { padding: 6px 9px 8px; }
     .rcard-h-cat {
       font-size: 0.85rem; font-weight: 700;
@@ -489,10 +492,10 @@
   <div class="rail-section">
     <div class="rail-label">추천 기준</div>
     <div class="pill-group-v">
-      <button class="pill active" data-action="anchor" data-val="tops">상의기준
+      <button class="pill active" data-action="anchor" data-val="tops">하의추천
         <div class="dwell-bar"></div>
       </button>
-      <button class="pill" data-action="anchor" data-val="bottoms">하의기준
+      <button class="pill" data-action="anchor" data-val="bottoms">상의추천
         <div class="dwell-bar"></div>
       </button>
       <button class="pill" data-action="anchor" data-val="full">전체
@@ -897,6 +900,15 @@ function hitTest(x, y) {
   return null;
 }
 
+function updateCardHover(points) {
+  document.querySelectorAll('.rcard-h').forEach(c => {
+    const r = c.getBoundingClientRect();
+    const over = points.some(([x, y]) =>
+      x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
+    c.classList.toggle('hovered', over);
+  });
+}
+
 function clearDwell(hand) {
   const d = dwell[hand];
   if (!d.el) return;
@@ -980,6 +992,11 @@ async function pollPose() {
       if (d.rw) { const [x,y] = camToScreen(d.rw); stepDwell('right', x, y); }
       else clearDwell('right');
     }
+
+    const handPts = [];
+    if (d.lw) handPts.push(camToScreen(d.lw));
+    if (d.rw) handPts.push(camToScreen(d.rw));
+    updateCardHover(handPts);
 
     $('zone-box').classList.toggle('in-zone', d.in_zone);
     if (S.phase === 'idle') {
