@@ -247,8 +247,8 @@ def product_image(rel_path):
 @app.route("/brand_logo/<brand>")
 def brand_logo(brand):
     files = {
-        "lg": "LG.jpg",
-        "musinsa": "무신사.png",
+        "lg": "lge_logo_kr_mono_white_rgb.png",
+        "musinsa": "musinsa_logo.png",
     }
     filename = files.get(brand)
     if filename is None:
