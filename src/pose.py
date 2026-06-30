@@ -9,6 +9,8 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+from detector import SPLIT, REGION_COLOR
+
 ZONE = (0.22, 0.03, 0.78, 0.97)
 HOLD_SEC = 3.0
 
@@ -39,6 +41,31 @@ class PoseTracker:
         """Re-enable zone counting (call when user presses cancel)."""
         self.disabled = False
         self._in_zone_since = None
+
+    def _region_boxes(self, joints: list, w: int, h: int) -> dict:
+        """Derive person bbox from visible joints, then split into tops/bottoms/shoes boxes.
+
+        This raw camera frame is unrotated (the physical camera is mounted rotated 90°;
+        /recommend corrects it with cv2.rotate before calling detector.py). So here the
+        head-to-foot axis runs along x, not y — split along x to keep boxes stacked
+        correctly once the client rotates the stream for display.
+        """
+        visible = [(x, y) for x, y, v in joints if v >= 0.5]
+        if not visible:
+            return {}
+        x1 = max(0, min(x for x, _ in visible))
+        y1 = max(0, min(y for _, y in visible))
+        x2 = min(w, max(x for x, _ in visible))
+        y2 = min(h, max(y for _, y in visible))
+        box_w = x2 - x1
+
+        boxes = {}
+        for cat, (r0, r1) in SPLIT.items():
+            cx1 = max(0, int(x1 + box_w * r0))
+            cx2 = min(w, int(x1 + box_w * r1))
+            if cx2 > cx1 and y2 > y1:
+                boxes[cat] = (cx1, y1, cx2, y2)
+        return boxes
 
     def process(self, frame: np.ndarray) -> dict:
         h, w = frame.shape[:2]
@@ -101,8 +128,11 @@ class PoseTracker:
         rw_n = [rw[0] / w, rw[1] / h] if rw else None
         lw_n = [lw[0] / w, lw[1] / h] if lw else None
 
+        boxes = self._region_boxes(joints, w, h) if joints else {}
+
         return {
             "joints":   joints,
+            "boxes":    boxes,
             "in_zone":  in_zone and not self.disabled,
             "hold_pct": hold_pct,
             "triggered": triggered,
@@ -111,8 +141,24 @@ class PoseTracker:
             "lw":       lw_n,
         }
 
-    def draw_overlay(self, frame: np.ndarray, state: dict) -> np.ndarray:
+    def draw_overlay(self, frame: np.ndarray, state: dict, show_overlay: bool = True) -> np.ndarray:
         h, w = frame.shape[:2]
+
+        if show_overlay:
+            joints = state.get("joints")
+            if joints:
+                for i, j in CONNECTIONS:
+                    if joints[i][2] >= 0.5 and joints[j][2] >= 0.5:
+                        cv2.line(frame, joints[i][:2], joints[j][:2], (0, 255, 0), 2)
+                for x, y, v in joints:
+                    if v >= 0.5:
+                        cv2.circle(frame, (x, y), 3, (0, 0, 255), -1)
+
+            for cat, (bx1, by1, bx2, by2) in state.get("boxes", {}).items():
+                color = REGION_COLOR[cat]
+                cv2.rectangle(frame, (bx1, by1), (bx2, by2), color, 1)
+                cv2.putText(frame, cat, (bx1 + 4, by1 + 14),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
 
         rw = state.get("rw")
         if rw:

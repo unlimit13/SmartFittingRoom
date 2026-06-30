@@ -40,8 +40,9 @@ _person_url_future: concurrent.futures.Future | None = None
 _tops_result_url: str | None = None   # reused as person image for bottoms try-on
 
 _pose_lock      = threading.Lock()
-_pose_state     = {"in_zone": False, "hold_pct": 0.0, "triggered": False, "disabled": False, "rw": None, "lw": None, "joints": None}
+_pose_state     = {"in_zone": False, "hold_pct": 0.0, "triggered": False, "disabled": False, "rw": None, "lw": None, "joints": None, "boxes": {}}
 _pose_triggered = False   # consumed once by /pose_poll
+_show_overlay   = True    # live feed skeleton + crop-box visualization on/off, toggled via /overlay_toggle
 
 
 def _pose_loop():
@@ -61,6 +62,7 @@ def _pose_loop():
                 _pose_state["rw"]        = state["rw"]
                 _pose_state["lw"]        = state["lw"]
                 _pose_state["joints"]    = state["joints"]
+                _pose_state["boxes"]     = state["boxes"]
                 if state["triggered"]:
                     _pose_triggered = True
         except Exception as e:
@@ -96,7 +98,7 @@ def _gen_detection_stream():
             continue
         with _pose_lock:
             p_state = dict(_pose_state)
-        _pose_tracker.draw_overlay(frame, p_state)
+        _pose_tracker.draw_overlay(frame, p_state, _show_overlay)
         _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
         yield (
             b"--frame\r\n"
@@ -263,6 +265,15 @@ def pose_reset():
     with _pose_lock:
         _pose_triggered = False
     return jsonify({"ok": True})
+
+
+@app.route("/overlay_toggle", methods=["POST"])
+def overlay_toggle():
+    """On/off control for the live-feed skeleton + crop-box visualization (R-02)."""
+    global _show_overlay
+    body = request.get_json(silent=True) or {}
+    _show_overlay = bool(body.get("enabled", True))
+    return jsonify({"show_overlay": _show_overlay})
 
 
 @app.route("/health")

@@ -86,6 +86,27 @@ def test_brand_logo_unknown_returns_404(client):
     assert resp.status_code == 404
 
 
+def test_overlay_toggle_sets_and_returns_state(client):
+    """R-02 라이브 시각화 on/off: /overlay_toggle이 전역 표시 상태를 갱신해 반환한다."""
+    resp_off = client.post(
+        "/overlay_toggle",
+        data=json.dumps({"enabled": False}),
+        content_type="application/json",
+    )
+    assert resp_off.status_code == 200
+    assert resp_off.get_json() == {"show_overlay": False}
+
+    resp_on = client.post(
+        "/overlay_toggle",
+        data=json.dumps({"enabled": True}),
+        content_type="application/json",
+    )
+    assert resp_on.get_json() == {"show_overlay": True}
+
+    import app as app_module
+    assert app_module._show_overlay is True
+
+
 def test_recommend_returns_200(client):
     resp = client.post(
         "/recommend",

@@ -309,6 +309,14 @@
       display: flex; flex-direction: column; gap: 10px;
       width: 100%;
     }
+
+    /* ── Palette panel (R-04: anchor 지배 색상 3개) ────────── */
+    #palette-panel { width: 100%; margin-bottom: 4px; }
+    #palette-row { display: flex; gap: 6px; }
+    .swatch {
+      flex: 1; height: 32px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
     .rcard-h {
       width: 100%;
       border-radius: 10px;
@@ -603,6 +611,17 @@
     <div id="voice-display"></div>
     <input id="text-input" type="text" placeholder="조건 직접 입력...">
   </div>
+
+  <div class="rail-divider"></div>
+
+  <div class="rail-section">
+    <div class="rail-label">검출 시각화</div>
+    <div class="pill-group-v">
+      <button class="pill active" id="btn-overlay-toggle" data-action="toggle-overlay">ON
+        <div class="dwell-bar"></div>
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ── VTON float (overlays left rail when active) ────── -->
@@ -627,6 +646,10 @@
 
 <!-- ── Results strip ──────────────────────────────────── -->
 <div id="results-strip" class="hidden">
+  <div id="palette-panel" class="hidden">
+    <div class="rail-label">색상표</div>
+    <div id="palette-row"></div>
+  </div>
   <div id="results-scroll-h">
     <div class="strip-empty">추천 결과가 여기에 표시됩니다</div>
   </div>
@@ -689,6 +712,8 @@ const S = {
   tryonReady: false,
   capturedTop: null,
   capturedBottom: null,
+  palette: [],
+  showOverlay: true,
   vtonStatus: 'idle',  // idle | loading | done | error | none
   vtonImg: null,
   vtonStep: '',
@@ -804,11 +829,14 @@ async function doRecommend() {
     S.outfits        = data.outfits || [];
     S.capturedTop    = data.captured_top_b64 || null;
     S.capturedBottom = data.captured_bottom_b64 || null;
+    S.palette        = data.palette || [];
     S.idx            = 0;
     S.phase       = 'results';
     S.tryonReady  = true;
 
     renderResults();
+    renderPalette();
+    $('palette-panel').classList.remove('hidden');
     $('results-strip').classList.remove('hidden');
     $('btn-tryon').disabled = false;
     $('btn-prev').disabled  = false;
@@ -879,6 +907,28 @@ function navigate(dir) {
   if (!S.outfits.length) return;
   S.idx = (S.idx + dir + S.outfits.length) % S.outfits.length;
   renderResults();
+}
+
+// ── 색상표 (R-04: 앵커 카테고리 지배 색상 팔레트) ─────────
+function renderPalette() {
+  $('palette-row').innerHTML = S.palette.map(hex =>
+    `<div class="swatch" style="background:${hex}" title="${hex}"></div>`
+  ).join('');
+}
+
+// ── 검출 시각화 ON/OFF (R-02: 라이브 피드 스켈레톤+크롭박스) ─
+async function toggleOverlay() {
+  S.showOverlay = !S.showOverlay;
+  const btn = $('btn-overlay-toggle');
+  btn.classList.toggle('active', S.showOverlay);
+  btn.firstChild.textContent = S.showOverlay ? 'ON' : 'OFF';
+  try {
+    await fetch('/overlay_toggle', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({enabled: S.showOverlay}),
+    });
+  } catch(_) {}
 }
 
 // ── VTON ───────────────────────────────────────────────
@@ -973,6 +1023,7 @@ function trigger(action, val) {
   if (action === 'gender')    { applyToggle('gender', val); return; }
   if (action === 'mic')       { startMic(); return; }
   if (action === 'recommend') { doRecommend(); return; }
+  if (action === 'toggle-overlay') { toggleOverlay(); return; }
   if (action === 'tryon')     { doTryon(); return; }
   if (action === 'prev')      { navigate(-1); return; }
   if (action === 'next')      { navigate(+1); return; }

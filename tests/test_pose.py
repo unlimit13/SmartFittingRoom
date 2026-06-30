@@ -40,6 +40,7 @@ def test_no_landmarks_no_trigger():
     t = _tracker(types.SimpleNamespace(pose_landmarks=None))
     state = t.process(FRAME)
     assert state["joints"] is None
+    assert state["boxes"] == {}
     assert state["in_zone"] is False
     assert state["triggered"] is False
     assert state["hold_pct"] == 0.0
@@ -77,3 +78,42 @@ def test_no_retrigger_until_reset():
     assert t.process(FRAME)["triggered"] is False
     t.reset()
     assert t.disabled is False
+
+
+def _fake_body_results():
+    """전신이 세로로 펼쳐진 랜드마크 흉내 (bbox가 0이 되지 않도록 x도 함께 분산)."""
+    lm = [
+        types.SimpleNamespace(x=0.45 + 0.1 * (i / 32), y=0.1 + 0.025 * i, visibility=1.0)
+        for i in range(33)
+    ]
+    return types.SimpleNamespace(pose_landmarks=types.SimpleNamespace(landmark=lm))
+
+
+def test_process_returns_region_boxes_for_full_body():
+    """R-02 라이브 시각화: 전신이 보이면 상의/하의/신발 박스 좌표가 함께 반환된다."""
+    t = _tracker(_fake_body_results())
+    state = t.process(FRAME)
+    assert set(state["boxes"].keys()) <= {"tops", "bottoms", "shoes"}
+    assert len(state["boxes"]) > 0
+    for x1, y1, x2, y2 in state["boxes"].values():
+        assert x2 > x1
+        assert y2 > y1
+
+
+def test_draw_overlay_skeleton_and_boxes_toggle():
+    """R-02 시각화 on/off: show_overlay=False면 스켈레톤·박스가 그려지지 않는다."""
+    t = PoseTracker()
+    state = {
+        "joints": [(100, 100, 1.0)] * 33,
+        "boxes": {"tops": (50, 50, 150, 150)},
+        "rw": None,
+        "lw": None,
+    }
+
+    frame_on = FRAME.copy()
+    t.draw_overlay(frame_on, state, show_overlay=True)
+    assert not np.array_equal(frame_on, FRAME)
+
+    frame_off = FRAME.copy()
+    t.draw_overlay(frame_off, state, show_overlay=False)
+    assert np.array_equal(frame_off, FRAME)

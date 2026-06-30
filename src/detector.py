@@ -14,6 +14,7 @@ import numpy as np
 CONF_THRESHOLD = 0.5
 
 SPLIT = {"tops": (0.0, 0.45), "bottoms": (0.40, 0.80), "shoes": (0.75, 1.0)}
+REGION_COLOR = {"tops": (255, 100, 0), "bottoms": (0, 100, 255), "shoes": (180, 0, 255)}
 
 KEY_LANDMARKS = [0, 11, 12, 23, 24]  # nose, shoulders, hips
 
@@ -68,7 +69,6 @@ class Detector:
         cv2.putText(annotated, f"person {confidence:.2f}",
                     (x1, y1 - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
-        REGION_COLOR = {"tops": (255, 100, 0), "bottoms": (0, 100, 255), "shoes": (180, 0, 255)}
         for cat, (r0, r1) in SPLIT.items():
             cy1 = max(0, int(y1 + box_h * r0))
             cy2 = min(h, int(y1 + box_h * r1))
