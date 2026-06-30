@@ -82,9 +82,10 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ### 5.2 테스트는 실제 코드 계약을 반영한다 (허구 mock 금지)
 - mock 반환값은 실제 함수가 내놓는 구조와 **일치**해야 한다. mock이 옛 계약을 담은 채 통과하면
   테스트는 초록불이어도 실제 계약을 검증하지 못한다.
-- 현행 핵심 계약 예시: `Recommender.recommend_outfit()` → **코디 세트 1개** 반환
-  (`outfits: [{tops, bottoms, shoes}]`, 각 슬롯은 `product_id/name/url/image_path/qr_b64`를 가진 상품 리스트).
-  `snap_id`·`anchor_score` 키는 없다. 라이브 피드는 `/detection_feed` (구 `/video_feed` 아님).
+- 현행 핵심 계약 예시: `Recommender.recommend_outfit()` → **최대 3개(`NUM_CANDIDATES=3`) 코디 세트** 반환
+  (`outfits: [{tops, bottoms, shoes}, ...]`, 각 슬롯은 `product_id/name/url/image_path/qr_b64`를 가진 상품 리스트).
+  검색 후보가 부족하면 그보다 적은 수만 반환한다. `snap_id`·`anchor_score` 키는 없다.
+  검출은 **MediaPipe Pose**(YOLO 아님). 라이브 피드는 `/detection_feed` (구 `/video_feed` 아님).
 
 ### 5.3 테스트 실행 결과 산출물(test-results)
 - 제출·패키징 전 정본 결과를 재생성한다:

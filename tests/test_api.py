@@ -78,7 +78,7 @@ def test_index_endpoint(client):
 def test_brand_logo_lg_endpoint(client):
     resp = client.get("/brand_logo/lg")
     assert resp.status_code == 200
-    assert resp.content_type == "image/jpeg"
+    assert resp.content_type == "image/png"
 
 
 def test_brand_logo_unknown_returns_404(client):
