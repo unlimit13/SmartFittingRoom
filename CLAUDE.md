@@ -98,6 +98,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - 실행 방법·환경변수·외부 서비스(`FAL_KEY`, `VTON_BACKEND` 등)를 바꾸면 `RUN.md`의 DevOps 8개 기준을 갱신한다.
 
 ### 5.5 요구사항 명세서
-- `deliverables/요구사항명세서.md`는 현재 **코드와 어긋난(outdated) 상태**다. 정답 기준으로 삼지 말 것.
-- 별도 작업으로 **코드 기준으로 재작성**해야 한다. 재작성 시 각 요구사항에 중립 ID(`R-01`…)를 부여하고,
-  해당 ID를 테스트 이름/도크스트링에 넣어(예: `test_R01_detection_feed_...`) 요구사항까지 한 줄로 추적되게 한다.
+- 정본은 **`deliverables/LG_부트캠프_13기_B반_요구사항_명세서(2팀).md` 하나뿐**이다.
+  (구 작업 사본 `deliverables/요구사항명세서.md`는 드리프트 방지를 위해 삭제됨 — 부활시키지 말 것.)
+- 코드가 바뀌면 이 정본을 **코드 기준으로 함께 갱신**한다. 각 요구사항은 중립 ID(`R-01`…)를 쓰고,
+  해당 ID를 테스트 도크스트링에 넣어(예: `R-01: ...`) 요구사항↔테스트↔결과가 한 줄로 추적되게 한다.

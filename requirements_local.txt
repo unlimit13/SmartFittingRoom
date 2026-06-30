@@ -6,7 +6,6 @@
 
 # --- 모델 변환 ---
 torch>=2.0.0                   # CLIP ViT-B/32 ONNX export
-ultralytics==8.2.100           # YOLOv8n ONNX export
 transformers==4.44.2           # CLIP / ko-sroberta 모델 로드
 optimum[onnxruntime]==1.22.0   # ko-sroberta → ONNX 변환
 open-clip-torch==2.26.1        # CLIP 모델 지원
@@ -15,6 +14,7 @@ sentence-transformers==3.1.1   # ko-sroberta 모델 지원
 # --- 크롤링 ---
 requests==2.32.3
 beautifulsoup4==4.12.3
+ultralytics==8.2.100           # 크롤 이미지 사람 검출 필터 (crawl_musinsa.py) — 런타임 의류 감지는 MediaPipe Pose
 
 # --- 인덱스 빌드 ---
 onnxruntime==1.19.2
