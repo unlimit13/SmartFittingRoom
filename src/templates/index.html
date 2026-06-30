@@ -64,11 +64,49 @@
       padding: 0 28px;
     }
     #clock { font-size: 1.05rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+    .brand-group {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      height: var(--bar-h);
+      max-width: calc(100vw - 260px);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .brand-logo {
+      display: block;
+      width: auto;
+      height: 32px;
+      max-width: 92px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+    .brand-separator {
+      flex: 0 0 auto;
+      color: var(--teal-bright);
+      font-size: 1.2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
     .app-title {
+      flex: 0 1 auto;
+      min-width: 0;
       font-size: 1.45rem; font-weight: 700; letter-spacing: -0.3px;
       background: linear-gradient(90deg, var(--teal) 0%, var(--teal-bright) 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
+    }
+    @media (max-width: 760px) {
+      .brand-group { gap: 8px; max-width: calc(100vw - 170px); }
+      .brand-logo { height: 24px; max-width: 64px; }
+      .brand-separator { font-size: 0.95rem; }
+      .app-title { font-size: 1.08rem; }
+      #topbar { padding: 0 14px; }
     }
     #weather { font-size: 0.92rem; color: var(--text); display: flex; align-items: center; gap: 6px; }
 
@@ -483,7 +521,12 @@
 <!-- ── Top bar ─────────────────────────────────────────── -->
 <div id="topbar">
   <span id="clock">--:--</span>
-  <div class="app-title">Smart Fitting Room</div>
+  <div class="brand-group" aria-label="Smart Fitting Room with LG and Musinsa">
+    <div class="app-title">Smart Fitting Room with.</div>
+    <img class="brand-logo" src="/brand_logo/lg" alt="LG">
+    <span class="brand-separator" aria-hidden="true">*</span>
+    <img class="brand-logo" src="/brand_logo/musinsa" alt="Musinsa">
+  </div>
   <div id="weather">☀ ...</div>
 </div>
 

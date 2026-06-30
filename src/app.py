@@ -244,6 +244,18 @@ def product_image(rel_path):
     return send_file(full)
 
 
+@app.route("/brand_logo/<brand>")
+def brand_logo(brand):
+    files = {
+        "lg": "LG.jpg",
+        "musinsa": "무신사.png",
+    }
+    filename = files.get(brand)
+    if filename is None:
+        return "", 404
+    return send_file(os.path.join(os.path.dirname(__file__), filename))
+
+
 @app.route("/pose_reset", methods=["POST"])
 def pose_reset():
     global _pose_triggered

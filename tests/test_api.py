@@ -73,6 +73,17 @@ def test_index_endpoint(client):
     assert resp.status_code == 200
 
 
+def test_brand_logo_lg_endpoint(client):
+    resp = client.get("/brand_logo/lg")
+    assert resp.status_code == 200
+    assert resp.content_type == "image/jpeg"
+
+
+def test_brand_logo_unknown_returns_404(client):
+    resp = client.get("/brand_logo/unknown")
+    assert resp.status_code == 404
+
+
 def test_recommend_returns_200(client):
     resp = client.post(
         "/recommend",
