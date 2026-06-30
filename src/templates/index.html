@@ -253,10 +253,10 @@
     /* ── Results strip ───────────────────────────────────── */
     #results-strip {
       position: fixed;
-      bottom: 14px;
+      top: 545px;
       right: 12px;
       width: min(252px, calc(26vw - 24px));
-      max-height: calc(100vh - var(--bar-h) - 28px);
+      max-height: calc(100vh - 560px);
       z-index: 15;
       background: transparent;
       display: flex; flex-direction: column;
@@ -288,8 +288,10 @@
       z-index: 6;
     }
     .rcard-h img {
-      width: 100%; height: 180px;
+      width: 100%; height: 150px;
       object-fit: cover; display: block; background: #0f0f18;
+      transition: width .28s ease, margin-left .28s ease,
+                  box-shadow .28s ease, border-radius .28s ease;
     }
     .rcard-h.hovered img, .rcard-h:hover img {
       width: 180%; height: auto; max-height: 60vh;
@@ -569,6 +571,9 @@
   <div class="rail-divider"></div>
 
   <div class="rail-section">
+    <button id="btn-tryon" data-action="tryon" disabled>◈ 입어보기
+      <div class="dwell-bar purple"></div>
+    </button>
     <div class="rail-label">후보 탐색</div>
     <div class="nav-row">
       <button class="nav-btn" id="btn-prev" data-action="prev" disabled>◀
@@ -578,9 +583,6 @@
         <div class="dwell-bar gold"></div>
       </button>
     </div>
-    <button id="btn-tryon" data-action="tryon" disabled>◈ 입어보기
-      <div class="dwell-bar purple"></div>
-    </button>
   </div>
 </div>
 
