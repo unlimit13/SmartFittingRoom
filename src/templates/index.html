@@ -262,7 +262,7 @@
       display: flex; flex-direction: column;
       align-items: stretch;
       gap: 10px; padding: 0;
-      overflow-y: auto;
+      overflow: visible;
       transition: opacity .3s, transform .3s;
     }
     #results-strip.hidden { opacity: 0; pointer-events: none; transform: translateY(-10px); }
@@ -279,14 +279,26 @@
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
       overflow: hidden;
+      position: relative;
       transition: border-color .2s;
     }
-    .rcard-h.hovered, .rcard-h:hover { border-color: var(--teal); }
+    .rcard-h.hovered, .rcard-h:hover {
+      border-color: var(--teal);
+      overflow: visible;
+      z-index: 6;
+    }
     .rcard-h img {
       width: 100%; height: 180px;
       object-fit: cover; display: block; background: #0f0f18;
     }
-    .rcard-h.hovered img, .rcard-h:hover img { object-fit: contain; }
+    .rcard-h.hovered img, .rcard-h:hover img {
+      width: 180%; height: auto; max-height: 60vh;
+      margin-left: -80%;
+      object-fit: contain;
+      position: relative; z-index: 6;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.55);
+    }
     .rcard-h-body { padding: 6px 9px 8px; }
     .rcard-h-cat {
       font-size: 0.85rem; font-weight: 700;
