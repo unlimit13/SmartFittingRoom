@@ -5,7 +5,7 @@
 # ============================================================
 
 # --- 모델 변환 ---
-torch>=2.0.0                   # CLIP ViT-B/32 ONNX export
+torch>=2.12.1                  # CLIP ViT-B/32 ONNX export
 transformers==4.44.2           # CLIP / ko-sroberta 모델 로드
 optimum[onnxruntime]==1.22.0   # ko-sroberta → ONNX 변환
 open-clip-torch==2.26.1        # CLIP 모델 지원
