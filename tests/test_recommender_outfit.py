@@ -1,5 +1,5 @@
 """
-R-07: 코디 추천 — Recommender.recommend_outfit()가 최대 3개의 코디 후보를 반환
+FR-08: 코디 추천 — Recommender.recommend_outfit()가 최대 3개의 코디 후보를 반환
       (outfits=[{tops, bottoms, shoes}, ...] 최대 NUM_CANDIDATES개,
        각 슬롯은 product_id/name/url/image_path/qr_b64). 검색 결과가 부족하면
        그보다 적은 수의 후보만 반환한다.

@@ -1,5 +1,5 @@
 """
-R-06: ko-sroberta 한국어 텍스트 임베딩 — 768-dim, L2 정규화
+FR-06: ko-sroberta 한국어 텍스트 임베딩 — 768-dim, L2 정규화
 """
 import numpy as np
 import pytest

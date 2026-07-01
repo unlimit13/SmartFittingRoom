@@ -1,6 +1,7 @@
 """
-R-12: 포즈 기반 자동 추천 트리거 — 필수 관절이 화면 중앙 존 안에 HOLD_SEC 유지되면 trigger.
-      트리거 후 zone은 disabled 되고, reset()으로만 재활성화된다.
+FR-03: 손 인식 커서 입력 — PoseTracker가 손 좌표와 zone 상태를 반환한다.
+      기존 중앙 존 HOLD_SEC 트리거 로직은 현재 프론트엔드 자동 추천에는 쓰이지 않지만,
+      PoseTracker 호환성 계약으로 유지 검증한다.
 
 mediapipe 추론 결과(_pose.process)는 mock으로 대체하고, 유지 시간 경과는 진입 시각
 (_in_zone_since)을 backdate 하여 결정적으로 재현한다. (실제 time.time()을 그대로 쓰므로
@@ -89,8 +90,22 @@ def _fake_body_results():
     return types.SimpleNamespace(pose_landmarks=types.SimpleNamespace(landmark=lm))
 
 
+def test_process_returns_normalized_hand_cursor_points():
+    """FR-03 손 커서 입력: 왼손/오른손 좌표를 프레임 기준 [0,1]로 반환한다."""
+    results = _fake_body_results()
+    lm = results.pose_landmarks.landmark
+    lm[19] = types.SimpleNamespace(x=0.25, y=0.30, visibility=1.0)
+    lm[20] = types.SimpleNamespace(x=0.75, y=0.40, visibility=1.0)
+
+    t = _tracker(results)
+    state = t.process(FRAME)
+
+    assert state["lw"] == pytest.approx([0.25, 0.30])
+    assert state["rw"] == pytest.approx([0.75, 0.40])
+
+
 def test_process_returns_region_boxes_for_full_body():
-    """R-02 라이브 시각화: 전신이 보이면 상의/하의/신발 박스 좌표가 함께 반환된다."""
+    """FR-02 라이브 시각화: 전신이 보이면 상의/하의/신발 박스 좌표가 함께 반환된다."""
     t = _tracker(_fake_body_results())
     state = t.process(FRAME)
     assert set(state["boxes"].keys()) <= {"tops", "bottoms", "shoes"}
@@ -101,7 +116,7 @@ def test_process_returns_region_boxes_for_full_body():
 
 
 def test_draw_overlay_skeleton_and_boxes_toggle():
-    """R-02 시각화 on/off: show_overlay=False면 스켈레톤·박스가 그려지지 않는다."""
+    """FR-02 시각화 on/off: show_overlay=False면 스켈레톤·박스가 그려지지 않는다."""
     t = PoseTracker()
     state = {
         "joints": [(100, 100, 1.0)] * 33,

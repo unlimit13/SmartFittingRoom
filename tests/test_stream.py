@@ -1,5 +1,5 @@
 """
-R-01: 웹캠 라이브 피드 — /detection_feed HTTP 200, multipart content-type, MJPEG 프레임 청크.
+FR-01: 웹캠 라이브 피드 — /detection_feed HTTP 200, multipart content-type, MJPEG 프레임 청크.
 (라이브 피드는 /detection_feed 로 서빙된다 — pose 오버레이가 그려진 감지 스트림.)
 """
 import numpy as np
@@ -25,6 +25,7 @@ def client():
          mock.patch.object(app_module, "_pose_tracker", mock.MagicMock()), \
          mock.patch.object(app_module, "_recommender", mock.MagicMock()):
         app_module.app.config["TESTING"] = True
+        app_module._pose_thread_started = True
         with app_module.app.test_client() as c:
             yield c
 

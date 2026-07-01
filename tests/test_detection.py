@@ -1,5 +1,5 @@
 """
-R-02: 의류 감지 (상/하/신발) — MediaPipe Pose
+FR-02: 의류 감지 (상/하/신발) — MediaPipe Pose
 """
 import pytest
 import numpy as np

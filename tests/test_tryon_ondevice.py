@@ -1,5 +1,5 @@
 """
-R-13: 가상 피팅 (온디바이스 백엔드) — Unit tests for src/tryon_ondevice.py.
+FR-10: 가상 피팅 (온디바이스 백엔드) — Unit tests for src/tryon_ondevice.py.
 
 The real backend shells out to a Raspberry Pi cluster (rsync + a spatial launcher),
 so these tests exercise only the locally-verifiable glue logic and mock out anything

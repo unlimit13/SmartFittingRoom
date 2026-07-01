@@ -1,7 +1,7 @@
 """
-R-07: /recommend API — 최대 3개의 코디 후보 포함 JSON 반환 (tops/bottoms/shoes)
-R-08: QR코드 생성 — base64 PNG 포함
-R-09: 전체 응답 시간 ≤ 2000ms
+FR-08: /recommend API — 최대 3개의 코디 후보 포함 JSON 반환 (tops/bottoms/shoes)
+FR-09: QR코드 생성 — base64 PNG 포함
+NFR-01: 전체 응답 시간 ≤ 2000ms
 """
 import base64
 import json
@@ -59,6 +59,7 @@ def client():
          mock.patch("recommender.Recommender", return_value=mock_rec):
         import app as app_module
         app_module.app.config["TESTING"] = True
+        app_module._pose_thread_started = True
         with app_module.app.test_client() as c:
             yield c
 
@@ -87,7 +88,7 @@ def test_brand_logo_unknown_returns_404(client):
 
 
 def test_overlay_toggle_sets_and_returns_state(client):
-    """R-02 라이브 시각화 on/off: /overlay_toggle이 전역 표시 상태를 갱신해 반환한다."""
+    """FR-02 라이브 시각화 on/off: /overlay_toggle이 전역 표시 상태를 갱신해 반환한다."""
     resp_off = client.post(
         "/overlay_toggle",
         data=json.dumps({"enabled": False}),
@@ -166,7 +167,7 @@ def test_recommend_anchor_category_default(client):
 
 
 def test_recommend_response_time(client):
-    """R-09: response time ≤ 2000ms (mock only verifies structure, not actual model latency)."""
+    """NFR-01: response time ≤ 2000ms (mock only verifies structure, not actual model latency)."""
     t0 = time.time()
     resp = client.post(
         "/recommend",

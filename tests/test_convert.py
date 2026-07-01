@@ -1,6 +1,6 @@
 """
-데이터 변환 (R-05/R-07 지원) — 무신사 크롤 결과 → metadata.json / snap_outfits.json /
-이미지 복사. FAISS 검색(R-05)과 코디 추천(R-07)이 소비하는 DB 자원을 생성하는 단계를 검증.
+데이터 변환 (FR-05/FR-08 지원) — 무신사 크롤 결과 → metadata.json / snap_outfits.json /
+이미지 복사. FAISS 검색(FR-05)과 코디 추천(FR-08)이 소비하는 DB 자원을 생성하는 단계를 검증.
 단일 소스(musinsa_out)에서 snap별 "gender"("male"/"female") 필드를 읽고
 "남"/"여" 라벨로 변환·부여하는지 검증.
 """

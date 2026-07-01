@@ -1,5 +1,5 @@
 """
-R-11: 분산 가상 피팅(Mobile-VTON spatial-parallel) — row-band 분할 로직 단위 검증.
+NFR-03: 분산 가상 피팅(Mobile-VTON spatial-parallel) — row-band 분할 로직 단위 검증.
 
 검증 대상은 src/ondevice_vton/parallel/sp_bands.py 의 band_bounds / band_size 다
 (sp_common.py 가 그대로 re-export 하므로 `sp_common.band_bounds` 와 동일 로직).
@@ -31,7 +31,7 @@ def _bands(H, world):
 @pytest.mark.parametrize("world", [2, 3, 4, 5])
 @pytest.mark.parametrize("H", [16, 64, 96, 100, 128])
 def test_R11_bands_cover_full_height_contiguously(H, world):
-    """R-11: bands tile [0, H) with no gaps and no overlaps."""
+    """NFR-03: bands tile [0, H) with no gaps and no overlaps."""
     bands = _bands(H, world)
     assert bands[0][0] == 0
     assert bands[-1][1] == H
@@ -43,7 +43,7 @@ def test_R11_bands_cover_full_height_contiguously(H, world):
 @pytest.mark.parametrize("world", [3, 4, 5])
 @pytest.mark.parametrize("H", [100, 97, 128])
 def test_R11_earlier_ranks_take_the_remainder(H, world):
-    """R-11: when H % world != 0, the first `rem` ranks get one extra row."""
+    """NFR-03: when H % world != 0, the first `rem` ranks get one extra row."""
     base, rem = divmod(H, world)
     for rank in range(world):
         expected = base + (1 if rank < rem else 0)
@@ -55,7 +55,7 @@ def test_R11_earlier_ranks_take_the_remainder(H, world):
 
 @pytest.mark.parametrize("world", [2, 4])
 def test_R11_band_bounds_is_deterministic(world):
-    """R-11: every rank computes the same bounds for any other rank, repeatably."""
+    """NFR-03: every rank computes the same bounds for any other rank, repeatably."""
     H = 120
     first = _bands(H, world)
     for _ in range(3):
@@ -63,14 +63,14 @@ def test_R11_band_bounds_is_deterministic(world):
 
 
 def test_R11_world2_default_split_is_even():
-    """R-11: 2-Pi default (SP_BAND_FRAC0 unset → 0.5) splits H in half."""
+    """NFR-03: 2-Pi default (SP_BAND_FRAC0 unset → 0.5) splits H in half."""
     os.environ.pop("SP_BAND_FRAC0", None)
     assert band_bounds(100, 0, 2) == (0, 50)
     assert band_bounds(100, 1, 2) == (50, 100)
 
 
 def test_R11_world2_uneven_split_via_env():
-    """R-11: SP_BAND_FRAC0 lets a Pi with less RAM own a smaller top band."""
+    """NFR-03: SP_BAND_FRAC0 lets a Pi with less RAM own a smaller top band."""
     os.environ["SP_BAND_FRAC0"] = "0.3"
     try:
         h0_0, h1_0 = band_bounds(100, 0, 2)
@@ -84,7 +84,7 @@ def test_R11_world2_uneven_split_via_env():
 
 
 def test_R11_band_size_matches_bounds():
-    """R-11: band_size == h1 - h0 for every rank."""
+    """NFR-03: band_size == h1 - h0 for every rank."""
     H, world = 113, 4
     for rank in range(world):
         h0, h1 = band_bounds(H, rank, world)
