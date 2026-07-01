@@ -20,7 +20,7 @@ import torch.distributed as dist
 import os
 
 # Pure (torch-free) row-band geometry lives in sp_bands so it can be unit-tested
-# (R-11) without the vton venv. Re-exported here so existing
+# (NFR-03) without the vton venv. Re-exported here so existing
 # `from parallel.sp_common import band_bounds` call sites keep working.
 try:
     from sp_bands import band_bounds, band_size

@@ -23,7 +23,8 @@
 - **색상 팔레트 추출** — OpenCV K-means로 앵커 크롭 영역의 지배색 3개를 추출하여 UI에 표시
 - **무신사 상품 QR코드** — 추천된 각 상품에서 바로 무신사 구매 페이지로 이동 가능
 - **감지 스트림 분리** — `/detection_feed`로 MediaPipe Pose 감지 오버레이 MJPEG 스트림 별도 제공
-- **포즈 기반 자동 트리거** — MediaPipe Pose(model_complexity=0)로 관절 추적, 화면 중앙 존에 3초 유지 시 추천 자동 발동, 홀드 진행바·잔여 시간 시각화
+- **손 인식 커서 입력** — MediaPipe Pose(model_complexity=0)로 양손 좌표를 추적하고, 버튼 위 1초 dwell로 추천·탐색·입어보기 액션 실행
+- **코디 세트 탐색** — 최대 3개 추천 세트를 손 커서로 ◀/▶ 버튼 dwell 트리거해 순환 탐색하고 현재/전체 세트 번호 표시
 - **가상 피팅(Virtual Try-On)** — 추천 상의/하의를 착용자에게 순차 합성(tops → bottoms), SSE 스트리밍으로 단계별 결과 표시. 백엔드는 `VTON_BACKEND`로 선택: 기본=fal-ai/fashn/tryon v1.6 클라우드 API, `ondevice`=온디바이스 Mobile-VTON
 - **분산 가상 피팅(spatial-parallel)** — 온디바이스 Mobile-VTON 디노이저(1024×768)를 단일 Pi OOM 없이 여러 RPi5에 H축(row-band) 공간 분산하여 추론(`src/ondevice_vton/parallel/`, 2대 이상·권장 4대, 전용 vton venv)
 
@@ -69,7 +70,7 @@ rank1..N-1 (이하 연속 band 추론 — peer)
 ```
 
 - 분할 규칙은 `band_bounds`(결정적·균등 분할, 나머지는 앞 rank가 +1). 이 분할 로직은
-  torch 비의존 모듈 `sp_bands.py`(`sp_common`이 re-export)로 분리되어 `tests/test_sp_common.py`(R-11)로
+  torch 비의존 모듈 `sp_bands.py`(`sp_common`이 re-export)로 분리되어 `tests/test_sp_common.py`(NFR-03)로
   메인 스위트에서 실제 실행·통과 검증된다.
 - 통신을 동반하는 분산 추론 코드(scatter/gather·halo·GroupNorm·attention)는 `src/ondevice_vton/parallel/`에 있으며
   torch 포함 **전용 vton venv**(`requirements_vton.txt`)에서 실행. 클러스터 구성·실행은 [RUN.md §9](./RUN.md) 참고.
@@ -120,7 +121,7 @@ rank1..N-1 (이하 연속 band 추론 — peer)
 │   ├── searcher.py            # FAISS 유사도 검색 (카테고리 필터, over-fetch k×3)
 │   ├── reranker.py            # HSV 색상 호환성 점수 + 팔레트 추출 (+ 리랭킹 로직 보유)
 │   ├── recommender.py         # 추천 파이프라인 (anchor 리랭킹 상위 3개 → 스냅/폴백 세트 구성 → 최대 3개 코디 세트)
-│   ├── pose.py                # MediaPipe 포즈 추적 + 존 감지 + 오버레이 렌더링
+│   ├── pose.py                # MediaPipe 포즈 추적 + 손 커서 좌표 + 존 힌트 + 오버레이 렌더링
 │   ├── tryon.py               # 가상 피팅 — fal-ai/fashn/tryon v1.6 외부 API 백엔드 (기본)
 │   ├── tryon_ondevice.py      # 가상 피팅 — 온디바이스 Mobile-VTON 백엔드 (VTON_BACKEND=ondevice)
 │   ├── ondevice_vton/         # 벤더링된 Mobile-VTON + spatial-parallel(H-band) 분산 추론 (parallel/sp_*.py)
@@ -149,7 +150,7 @@ rank1..N-1 (이하 연속 band 추론 — peer)
 │   ├── convert_musinsa_out.py # musinsa_out → data/musinsa_db/ + snap_outfits.json
 │   ├── build_image_index.py   # CLIP FAISS 인덱스 빌드
 │   └── build_style_vectors.py # ko-sroberta 스타일 벡터 빌드
-├── tests/                     # pytest 자동화 테스트 (11개 파일, R-01~R-13 매핑)
+├── tests/                     # pytest 자동화 테스트 (12개 파일, FR-/NFR- 매핑)
 ├── deliverables/              # 제출 산출물
 ├── project_plans/             # 구현 계획 문서
 ├── project_guidelines/        # 평가 가이드
@@ -224,21 +225,29 @@ rsync -av ./models/ willtek@10.56.130.185:/home/willtek/work/Project/SmartFittin
 
 ## 요구사항
 
+### 기능 요구사항
+
 | ID | 내용 | 검증 기준 |
 |---|---|---|
-| R-01 | 웹캠 라이브 피드 표시 | MJPEG 스트림 끊김 없이 출력 |
-| R-02 | 의류 영역 자동 감지 | 바운딩 박스 반환, 신뢰도 ≥ 0.5 |
-| R-03 | CLIP 이미지 임베딩 | 512-dim 벡터, 추론 ≤ 500ms |
-| R-04 | 색상 팔레트 추출 | 앵커 크롭에서 지배색 3개 UI 표시 |
-| R-05 | FAISS 유사도 검색 | 앵커 카테고리 Top-20 반환, ≤ 100ms |
-| R-06 | 한국어 텍스트 임베딩 | ko-sroberta ONNX로 768-dim 벡터 인코딩 후 Reranker 혼합 점수에 반영 |
-| R-07 | 혼합 점수 기반 코디 세트 표시 | 앵커 리랭킹 상위 3개 + 스냅/폴백 → 최대 3개 코디 세트(상의+하의+신발) + QR코드 |
-| R-08 | 무신사 QR코드 생성 | 스캔 시 상품 페이지 이동 |
-| R-09 | 전체 응답 시간 ≤ 2초 | 5회 평균 ≤ 2,000ms |
-| R-10 | AI 추론 On-Device 동작 (가상 피팅 제외) | AI 추론 파이프라인은 인터넷 차단 시 정상 동작; 가상 피팅은 `FAL_KEY` 외부 API 사용 |
-| R-11 | 분산 가상 피팅 (spatial-parallel Mobile-VTON) | row-band 분할이 결정적·무중첩으로 전체 높이를 덮음(`tests/test_sp_common.py`), N대 RPi5에서 단일 Pi와 동치인 합성 결과 (클러스터 시연) |
-| R-12 | 포즈 기반 자동 추천 트리거 | 화면 중앙 존 3초 유지 → `/recommend` 자동 호출, `triggered: true` 확인 |
-| R-13 | 가상 피팅(Virtual Try-On) | `/tryon` SSE로 tops·bottoms 합성 이미지 반환 및 UI 표시 |
+| FR-01 | 웹캠 라이브 피드 표시 | `/detection_feed` MJPEG 스트림 HTTP 200 및 multipart 출력 |
+| FR-02 | 의류 영역 감지·시각화 | MediaPipe Pose 바운딩 박스와 상의/하의/신발 크롭 반환, 오버레이 on/off |
+| FR-03 | 손 인식 커서 입력 | `/pose_poll`이 정규화 손 좌표(`lw`/`rw`) 반환, 버튼 1초 dwell로 액션 트리거 |
+| FR-04 | CLIP 이미지 임베딩 | 512-dim L2 정규화 벡터 반환 |
+| FR-05 | FAISS 유사도 검색 | 앵커 카테고리 Top-20 후보 반환, 검색 ≤ 100ms |
+| FR-06 | 한국어 텍스트 임베딩·리랭킹 | ko-sroberta 768-dim 벡터가 Reranker 텍스트 유사도 점수에 반영 |
+| FR-07 | 색상 팔레트 추출·표시 | 앵커 크롭 지배색 3개 추출 및 UI 표시 |
+| FR-08 | 손 커서 추천 트리거 + 코디 세트 생성 | `/recommend`가 혼합 점수로 앵커 Top-3 선정 후 최대 3개 코디 세트 반환 |
+| FR-09 | 무신사 QR코드 생성 | 상품별 `qr_b64` base64 PNG 포함, 스캔 시 상품 페이지 이동 |
+| FR-10 | 가상 피팅(Virtual Try-On) | `/tryon` SSE로 tops·bottoms 합성 이미지 반환 및 UI 표시 |
+| FR-11 | 손 커서 세트 네비게이션 | ◀/▶ dwell로 다음/이전 코디 세트 전환, 현재/전체 번호 표시 |
+
+### 비기능 요구사항
+
+| ID | 내용 | 검증 기준 |
+|---|---|---|
+| NFR-01 | 전체 추천 응답 시간 ≤ 2초 | `/recommend` 5회 평균 ≤ 2,000ms |
+| NFR-02 | AI 추론 On-Device 동작 (가상 피팅 제외) | 감지·임베딩·검색·리랭킹은 RPi5 로컬에서 실행, 기본 가상 피팅만 외부 API 사용 |
+| NFR-03 | 분산 가상 피팅 (spatial-parallel Mobile-VTON) | row-band 분할 결정성·무중첩 전체 커버리지 단위 테스트 + N대 RPi 클러스터 시연 |
 
 ---
 

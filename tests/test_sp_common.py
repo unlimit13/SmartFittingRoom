@@ -30,7 +30,7 @@ def _bands(H, world):
 
 @pytest.mark.parametrize("world", [2, 3, 4, 5])
 @pytest.mark.parametrize("H", [16, 64, 96, 100, 128])
-def test_R11_bands_cover_full_height_contiguously(H, world):
+def test_NFR03_bands_cover_full_height_contiguously(H, world):
     """NFR-03: bands tile [0, H) with no gaps and no overlaps."""
     bands = _bands(H, world)
     assert bands[0][0] == 0
@@ -42,7 +42,7 @@ def test_R11_bands_cover_full_height_contiguously(H, world):
 
 @pytest.mark.parametrize("world", [3, 4, 5])
 @pytest.mark.parametrize("H", [100, 97, 128])
-def test_R11_earlier_ranks_take_the_remainder(H, world):
+def test_NFR03_earlier_ranks_take_the_remainder(H, world):
     """NFR-03: when H % world != 0, the first `rem` ranks get one extra row."""
     base, rem = divmod(H, world)
     for rank in range(world):
@@ -54,7 +54,7 @@ def test_R11_earlier_ranks_take_the_remainder(H, world):
 
 
 @pytest.mark.parametrize("world", [2, 4])
-def test_R11_band_bounds_is_deterministic(world):
+def test_NFR03_band_bounds_is_deterministic(world):
     """NFR-03: every rank computes the same bounds for any other rank, repeatably."""
     H = 120
     first = _bands(H, world)
@@ -62,14 +62,14 @@ def test_R11_band_bounds_is_deterministic(world):
         assert _bands(H, world) == first
 
 
-def test_R11_world2_default_split_is_even():
+def test_NFR03_world2_default_split_is_even():
     """NFR-03: 2-Pi default (SP_BAND_FRAC0 unset → 0.5) splits H in half."""
     os.environ.pop("SP_BAND_FRAC0", None)
     assert band_bounds(100, 0, 2) == (0, 50)
     assert band_bounds(100, 1, 2) == (50, 100)
 
 
-def test_R11_world2_uneven_split_via_env():
+def test_NFR03_world2_uneven_split_via_env():
     """NFR-03: SP_BAND_FRAC0 lets a Pi with less RAM own a smaller top band."""
     os.environ["SP_BAND_FRAC0"] = "0.3"
     try:
@@ -83,7 +83,7 @@ def test_R11_world2_uneven_split_via_env():
         os.environ.pop("SP_BAND_FRAC0", None)
 
 
-def test_R11_band_size_matches_bounds():
+def test_NFR03_band_size_matches_bounds():
     """NFR-03: band_size == h1 - h0 for every rank."""
     H, world = 113, 4
     for rank in range(world):

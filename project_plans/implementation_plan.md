@@ -87,7 +87,7 @@
 | FAISS 검색 (Top-50) | ~5ms |
 | ko-sroberta 텍스트 인코딩 | ~200ms |
 | 스타일 벡터 리랭킹 | ~5ms |
-| **전체** | **~560ms** → R-06 (2초 이내) 충족 |
+| **전체** | **~560ms** → NFR-01(2초 이내) 충족 |
 
 ### 프로젝트 디렉토리 구조
 
@@ -337,19 +337,24 @@ src/
 
 ---
 
-## 요구사항 → 테스트 매핑 (예비)
+## 요구사항 → 테스트 매핑 (현행 FR/NFR 기준)
 
 | 요구사항 ID | 내용 | 검증 기준 | 담당 테스트 |
 |---|---|---|---|
-| R-01 | 웹캠 라이브 피드 표시 | `/video_feed` 200 OK, 끊김 없음 | `test_stream.py` |
-| R-02 | 의류 감지 (상/하/신발) | 바운딩 박스 반환, 신뢰도 ≥ 0.5 | `test_detection.py` |
-| R-03 | CLIP 이미지 임베딩 추출 | 512-dim 벡터 반환, 추론 ≤ 500ms | `test_embedding.py` |
-| R-04 | 색상 팔레트 추출 | 지배색 3개 반환 | `test_search.py` |
-| R-05 | 유사 아이템 시각 검색 | Top-50 후보 반환, 검색 ≤ 100ms | `test_search.py` |
-| R-06 | 한국어 텍스트 입력 기반 리랭킹 | 텍스트 쿼리 입력 시 결과 순위 변화 확인 | `test_text_encoding.py`, `test_reranking.py` |
-| R-07 | 전체 추천 응답 시간 | `/recommend` 응답 ≤ 2초 | `test_api.py` |
-| R-08 | QR코드 생성 | 무신사 URL 포함 QR 이미지 반환 | `test_api.py` |
-| R-09 | (Phase 2) 분산 파이프라인 동작 | 4대 보드 정상 통신, 동일 결과 반환 | 별도 integration test |
+| FR-01 | 웹캠 라이브 피드 표시 | `/detection_feed` 200 OK, multipart MJPEG 출력 | `test_stream.py` |
+| FR-02 | 의류 영역 감지·시각화 | 바운딩 박스/크롭 반환, 오버레이 on/off | `test_detection.py`, `test_pose.py`, `test_api.py` |
+| FR-03 | 손 인식 커서 입력 | 손 좌표 정규화 반환, dwell 액션은 UI 시연 | `test_pose.py` |
+| FR-04 | CLIP 이미지 임베딩 추출 | 512-dim 벡터 반환 | `test_embedding.py` |
+| FR-05 | 유사 아이템 시각 검색 | 후보 반환, 검색 ≤ 100ms | `test_search.py` |
+| FR-06 | 한국어 텍스트 입력 기반 리랭킹 | 텍스트 벡터/리랭킹 점수 검증 | `test_text_encoding.py`, `test_reranking.py` |
+| FR-07 | 색상 팔레트 추출 | 지배색 3개 반환 | `test_search.py` |
+| FR-08 | 혼합 점수 코디 세트 생성 | 최대 3개 코디 세트 반환 | `test_recommender_outfit.py`, `test_api.py` |
+| FR-09 | QR코드 생성 | 무신사 URL 포함 QR 이미지 반환 | `test_api.py` |
+| FR-10 | 가상 피팅 | 온디바이스 glue 로직 및 SSE 계약 검증 | `test_tryon_ondevice.py`, `test_api.py` |
+| FR-11 | 손 커서 세트 네비게이션 | 프론트 UI 시연으로 검증 | 시연 |
+| NFR-01 | 전체 추천 응답 시간 | `/recommend` 응답 ≤ 2초 | `test_api.py` |
+| NFR-02 | AI 추론 On-Device 동작 | 외부 API 호출 없음 코드 검증(가상 피팅 제외) | 코드 검토 |
+| NFR-03 | 분산 가상 피팅 추론 | row-band 분할 결정성·커버리지 | `test_sp_common.py` |
 
 ---
 
@@ -380,7 +385,7 @@ src/
 
 ## 산출물 체크리스트 (output_guide.md 기준)
 
-- [x] `요구사항_명세서.md` — R-01~R-11 + 검증 기준 + 시연 타임스탬프 (`deliverables/요구사항명세서.md`)
+- [x] `요구사항_명세서.md` — FR-01~FR-11 / NFR-01~NFR-03 + 검증 기준 + 시연 타임스탬프 (`deliverables/LG_부트캠프_13기_B반_요구사항_명세서(2팀).md`)
 - [ ] `결과보고서.pdf/.pptx` — 설계·구현·결과 정리
 - [ ] `결과파일.zip` — src/ + tests/ + test-results/ + README.md + RUN.md + requirements.txt + .git/
 - [ ] `시연영상.mp4` — 아래 타임스탬프 기준 녹화
@@ -392,13 +397,15 @@ src/
 | 시간 | 장면 | 요구사항 |
 |---|---|---|
 | 00:00 | 시스템 부팅 / 웹 앱 접속 | — |
-| 00:15 | 카메라 앞에 서기 → 라이브 피드 확인 | R-01 |
-| 00:25 | YOLO 바운딩 박스 감지 표시 | R-02 |
-| 00:35 | 색상 팔레트 추출 결과 | R-04 |
-| 00:45 | 텍스트 없이 시각 검색만으로 Top-3 추천 | R-03, R-05, R-07 |
-| 01:00 | 텍스트 입력: "맑은 날 여자친구와 데이트하려고 해" → 추천 결과 변화 | R-06 |
-| 01:15 | QR코드 스캔 → 무신사 상품 페이지 연결 | R-08 |
-| 01:30 | (Phase 2) 4대 RPi 분산 파이프라인 구조 설명 | R-09 |
+| 00:15 | 카메라 앞에 서기 → 라이브 피드 확인 | FR-01 |
+| 00:25 | MediaPipe Pose 의류 영역 감지 표시 | FR-02 |
+| 00:35 | 색상 팔레트 추출 결과 | FR-07 |
+| 00:45 | 손 커서 추천 트리거 → Top-3 코디 세트 추천 | FR-03, FR-08 |
+| 01:00 | 텍스트 입력: "맑은 날 여자친구와 데이트하려고 해" → 추천 결과 변화 | FR-06 |
+| 01:15 | QR코드 스캔 → 무신사 상품 페이지 연결 | FR-09 |
+| 01:30 | 가상 피팅 합성 결과 표시 | FR-10 |
+| 01:50 | 손 커서로 ◀/▶ 세트 네비게이션 | FR-11 |
+| 별도 | 4대 RPi 공간 분산 가상 피팅 구조 설명/시연 | NFR-03 |
 
 ---
 

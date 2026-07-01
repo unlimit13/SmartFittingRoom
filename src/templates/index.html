@@ -310,7 +310,7 @@
       width: 100%;
     }
 
-    /* ── Palette panel (R-04: anchor 지배 색상 3개) ────────── */
+    /* ── Palette panel (FR-07: anchor 지배 색상 3개) ────────── */
     #palette-panel { width: 100%; margin-bottom: 4px; }
     #palette-row { display: flex; gap: 6px; }
     .swatch {
@@ -909,14 +909,14 @@ function navigate(dir) {
   renderResults();
 }
 
-// ── 색상표 (R-04: 앵커 카테고리 지배 색상 팔레트) ─────────
+// ── 색상표 (FR-07: 앵커 카테고리 지배 색상 팔레트) ─────────
 function renderPalette() {
   $('palette-row').innerHTML = S.palette.map(hex =>
     `<div class="swatch" style="background:${hex}" title="${hex}"></div>`
   ).join('');
 }
 
-// ── 검출 시각화 ON/OFF (R-02: 라이브 피드 스켈레톤+크롭박스) ─
+// ── 검출 시각화 ON/OFF (FR-02: 라이브 피드 스켈레톤+크롭박스) ─
 async function toggleOverlay() {
   S.showOverlay = !S.showOverlay;
   const btn = $('btn-overlay-toggle');

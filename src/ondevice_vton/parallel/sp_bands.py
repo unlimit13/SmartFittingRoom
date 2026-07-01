@@ -1,7 +1,7 @@
 """Row-band (height-axis) partition math for spatial parallelism.
 
 Pure integer geometry, deliberately free of torch so the split logic can be
-unit-tested (R-11) without the heavy vton venv. sp_common.py re-exports these.
+unit-tested (NFR-03) without the heavy vton venv. sp_common.py re-exports these.
 """
 import os
 

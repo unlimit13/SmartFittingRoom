@@ -269,7 +269,7 @@ def pose_reset():
 
 @app.route("/overlay_toggle", methods=["POST"])
 def overlay_toggle():
-    """On/off control for the live-feed skeleton + crop-box visualization (R-02)."""
+    """On/off control for the live-feed skeleton + crop-box visualization (FR-02)."""
     global _show_overlay
     body = request.get_json(silent=True) or {}
     _show_overlay = bool(body.get("enabled", True))

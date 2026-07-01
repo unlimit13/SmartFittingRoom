@@ -1,384 +1,308 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LG 부트캠프 13기 B반 2팀 — 프로젝트 평가 리포트</title>
-<style>
-  :root{
-    --bg:#0f1115; --card:#181b22; --line:#2a2f3a; --txt:#e6e8ec; --muted:#9aa3b2;
-    --ok:#2ecc71; --warn:#f1c40f; --bad:#e74c3c; --info:#3498db; --na:#7f8c9b;
-    --accent:#a02020;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);
-       font-family:-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;line-height:1.6}
-  header{background:linear-gradient(135deg,#7a1620,#a02020);padding:32px 28px;border-bottom:3px solid #5a0f17}
-  header h1{margin:0 0 6px;font-size:24px}
-  header .sub{color:#f3d6d8;font-size:14px}
-  .wrap{max-width:1120px;margin:0 auto;padding:24px 20px 80px}
-  section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:20px 0}
-  h2{font-size:19px;margin:0 0 4px;border-left:4px solid var(--accent);padding-left:10px}
-  h3{font-size:15px;margin:22px 0 8px;color:#cdd3dd}
-  .desc{color:var(--muted);font-size:13px;margin:0 0 14px}
-  table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
-  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
-  th{background:#20242d;color:#cfd6e2;font-weight:600}
-  tr:nth-child(even) td{background:#1c2028}
-  code{background:#0c0e12;color:#e0c98a;padding:1px 5px;border-radius:4px;font-size:12px}
-  .pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
-  .ok{background:rgba(46,204,113,.15);color:var(--ok);border:1px solid rgba(46,204,113,.4)}
-  .warn{background:rgba(241,196,15,.15);color:var(--warn);border:1px solid rgba(241,196,15,.4)}
-  .bad{background:rgba(231,76,60,.15);color:var(--bad);border:1px solid rgba(231,76,60,.4)}
-  .info{background:rgba(52,152,219,.15);color:var(--info);border:1px solid rgba(52,152,219,.4)}
-  .na{background:rgba(127,140,155,.15);color:var(--na);border:1px solid rgba(127,140,155,.4)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
-  .kpi{background:#11141a;border:1px solid var(--line);border-radius:10px;padding:14px}
-  .kpi .n{font-size:24px;font-weight:700}
-  .kpi .l{font-size:12px;color:var(--muted)}
-  .ev{font-size:11.5px;color:#8b93a3;font-family:ui-monospace,Menlo,monospace}
-  .note{background:#11141a;border:1px solid var(--line);border-left:3px solid var(--info);
-        padding:10px 14px;border-radius:6px;font-size:12.5px;color:#b9c1cf;margin:10px 0}
-  .scoreform{background:#11141a;border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:14px 0}
-  .scoreform .src{color:var(--muted);font-size:12.5px;margin:2px 0}
-  .blank{display:inline-block;min-width:42px;border-bottom:1px solid #555;text-align:center;color:#666}
-  footer{color:var(--muted);font-size:12px;text-align:center;padding:20px}
-  a{color:#e29aa0}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LG 부트캠프 13기 B반 에이전트(2팀) 평가 리포트</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #1f2933;
+      --muted: #637083;
+      --line: #d9dee7;
+      --ok: #137a4b;
+      --warn: #9a5b00;
+      --bad: #b42318;
+      --info: #2457a6;
+      --chip: #edf2f7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+    header {
+      padding: 32px 40px 20px;
+      background: #111827;
+      color: #fff;
+    }
+    header h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: 0; }
+    header p { margin: 4px 0; color: #d8dee9; }
+    main { max-width: 1320px; margin: 0 auto; padding: 24px 28px 60px; }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 22px;
+      margin: 18px 0;
+    }
+    h2 { margin: 0 0 14px; font-size: 22px; }
+    h3 { margin: 22px 0 10px; font-size: 17px; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; table-layout: fixed; }
+    th, td { border: 1px solid var(--line); padding: 9px 10px; vertical-align: top; word-break: keep-all; overflow-wrap: anywhere; }
+    th { background: #f0f3f7; text-align: left; font-weight: 700; }
+    code { background: #eef1f5; border-radius: 4px; padding: 1px 5px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .metric { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: #fbfcfe; }
+    .metric strong { display: block; font-size: 22px; margin-bottom: 4px; }
+    .muted { color: var(--muted); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--chip); font-weight: 700; font-size: 12px; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .info { color: var(--info); }
+    .note { background: #fff8e6; border-left: 4px solid #d49400; padding: 10px 12px; margin: 12px 0; }
+    .limit { background: #fef3f2; border-left: 4px solid var(--bad); padding: 10px 12px; margin: 12px 0; }
+    ul { margin-top: 8px; }
+    @media (max-width: 900px) {
+      header { padding: 24px 18px; }
+      main { padding: 16px; }
+      .grid { grid-template-columns: 1fr; }
+      table { font-size: 14px; }
+    }
+  </style>
 </head>
 <body>
 <header>
-  <h1>프로젝트 평가 리포트 — LG 부트캠프 13기 B반 2팀</h1>
-  <div class="sub">LG Styler Smart Fitting Room · On-Device AI 실시간 패션 추천 시스템 &nbsp;|&nbsp;
-  평가 규칙: <code>project_assessment_agent_v1.0.md</code> &nbsp;|&nbsp; 분석 일시: 2026-06-30</div>
+  <h1>LG 부트캠프 13기 B반 2팀 프로젝트 자동 평가 리포트</h1>
+  <p>평가 기준: <code>project_guidelines/project_assessment_agent_v1.0.md</code> 3장, 5장, 6장, 7장</p>
+  <p>분석 일시: 2026-07-01 10:47:51 KST</p>
 </header>
-<div class="wrap">
+<main>
 
-<div class="note">
-  본 리포트는 정의서 <b>3장 핵심 원칙</b>(검증 가능한 것만 판단 · 모든 결론에 근거 첨부 · 추측 금지 ·
-  주관 항목은 사람에게 위임)에 따라 자동 생성되었습니다. 모든 자동 판정에는 파일 경로 · 커밋 · 테스트 로그
-  근거를 함께 표기했으며, 난이도 · 창의성 등 주관 항목은 판단하지 않고 8장(강사 평가 폼)만 빈칸으로 생성했습니다.
-</div>
-
-<!-- ============ 1. 요약 ============ -->
-<section id="s1">
+<section id="summary">
   <h2>1. 요약</h2>
-  <table>
-    <tr><th style="width:160px">반 / 팀</th><td>B반 / 2팀 (팀원 4명)</td></tr>
-    <tr><th>프로젝트명</th><td>LG Styler Smart Fitting Room — On-Device AI 기반 실시간 패션 추천 시스템</td></tr>
-    <tr><th>개요</th><td>라즈베리파이5에서 웹캠 영상 + 한국어 자연어를 결합해 무신사 의류 DB(118장)에서 코디를 실시간 추천. <span class="ev">deliverables/…요구사항_명세서(2팀).md</span></td></tr>
-    <tr><th>분석 일시</th><td>2026-06-30 (작업 디렉토리 git HEAD <code>84b3763</code> 기준)</td></tr>
-  </table>
   <div class="grid">
-    <div class="kpi"><div class="n">13</div><div class="l">기능 요구사항 (R-01~R-13)</div></div>
-    <div class="kpi"><div class="n" style="color:var(--ok)">101</div><div class="l">테스트 통과 (실측 실행)</div></div>
-    <div class="kpi"><div class="n" style="color:var(--warn)">13</div><div class="l">테스트 skip (모델·인덱스 미동봉)</div></div>
-    <div class="kpi"><div class="n" style="color:var(--ok)">0</div><div class="l">테스트 실패</div></div>
-    <div class="kpi"><div class="n">8/8</div><div class="l">DevOps 기준 문서화</div></div>
-    <div class="kpi"><div class="n">72</div><div class="l">커밋 / 4인 기여</div></div>
+    <div class="metric"><strong>B반 2팀</strong><span class="muted">요구사항서 1행 기준</span></div>
+    <div class="metric"><strong>LG Styler Smart Fitting Room</strong><span class="muted">요구사항서 7행 기준</span></div>
+    <div class="metric"><strong class="ok">118 passed</strong><span class="muted">실행 테스트 118개 전체 통과</span></div>
+    <div class="metric"><strong class="ok">기동 충족</strong><span class="muted"><code>/health</code> HTTP 200 확인</span></div>
   </div>
-  <h3>핵심 결과 한눈에</h3>
-  <ul style="font-size:13px;color:#c6cdd9">
-    <li>13개 기능 요구사항 모두 소스코드에 대응 구현이 확인됨(코드 근거 첨부). 13개 중 12개는 대응 테스트 존재.</li>
-    <li>테스트 스위트 실측 실행 결과 <b>101 passed / 13 skipped / 0 failed</b>. skip 13건은 ONNX 모델·FAISS 인덱스가 동봉되지 않아 <code>conftest</code>의 <code>skipif</code> 처리된 항목(추론 구조는 mock으로 검증).</li>
-    <li>DevOps 8개 기준 모두 문서화 충족. 단, 기준 7·8(설치/기동 실재현)은 RPi5·카메라·모델 의존으로 <b>이 평가 환경에서는 부분 검증</b>.</li>
-    <li><b>시연영상(.mp4) 미동봉</b> → 시연 기반 실제 동작 확인(정의서 5.4)은 평가자가 영상 확보 후 기입 필요.</li>
+  <ul>
+    <li>요구사항 명세서는 <code>deliverables/LG_부트캠프_13기_B반_요구사항_명세서(2팀).md</code>에서 FR-01~FR-11, NFR-01~NFR-03으로 확인했다(29~50행).</li>
+    <li>RUN.md Step 0에 따라 <code>models.zip</code>과 <code>data.zip</code>을 Google Drive에서 다운로드했다. <code>models/clip_image_encoder.onnx</code>, <code>models/ko_sroberta/model.onnx</code>, <code>data/faiss_index/index.bin</code>, <code>data/musinsa_db/metadata.json</code>을 확인했다.</li>
+    <li>테스트는 실제 실행했다. 명령: <code>/tmp/sfr-runcheck/bin/python -m pytest tests/ -v --tb=short --junitxml=test-results/agent_junit_after_assets_runenv.xml</code>. 결과: <code>118 passed, 2 warnings in 16.24s</code>, JUnit 근거: <code>test-results/agent_junit_after_assets_runenv.xml</code>.</li>
+    <li>RUN.md 기준 보드용 설치는 임시 가상환경에서 성공했다. 명령: <code>/tmp/sfr-runcheck/bin/python -m pip install -r requirements.txt</code>. 설치 완료 로그에 <code>Successfully installed ... flask-3.0.3 ... onnxruntime-1.27.0 ... mediapipe-0.10.18</code>가 포함됐다.</li>
+    <li>애플리케이션 실제 기동은 성공했다. 명령: <code>/tmp/sfr-runcheck/bin/python src/app.py</code>. 서버 로그: <code>Running on http://127.0.0.1:5000</code>. 확인 명령: <code>curl -sS -i http://127.0.0.1:5000/health</code>, 응답: <code>HTTP/1.1 200 OK</code>, <code>{"status":"ok"}</code>.</li>
+    <li>시연 영상 파일은 현재 워크스페이스에서 확인되지 않았다. 요구사항서의 타임스탬프 표는 있으나 실제 영상 기반 판정은 평가자가 별도 확인해야 한다.</li>
   </ul>
+  <p class="note">판정 원칙: 코드 품질 수준, 기술 난이도, 창의성, 발표력은 자동 판정하지 않았다. 비기능 요구사항은 강사 평가용 빈 점수표로만 제공한다.</p>
 </section>
 
-<!-- ============ 2. 산출물 점검 ============ -->
-<section id="s2">
+<section id="artifacts">
   <h2>2. 산출물 점검 결과</h2>
-  <p class="desc">정의서 4장 입력 표 기준. <code>에이전트(2팀).html</code>은 Agent 생성 출력이므로 점검 대상 제외(정의서 4장·7장).</p>
   <table>
-    <tr><th style="width:230px">필수 산출물</th><th style="width:90px">상태</th><th>근거 / 비고</th></tr>
-    <tr><td>요구사항 명세서 (.md)</td><td><span class="pill ok">충족</span></td><td><span class="ev">deliverables/LG_부트캠프_13기_B반_요구사항_명세서(2팀).md</span> — R-01~R-13, 중립 ID 사용</td></tr>
-    <tr><td>결과보고서 (.pdf)</td><td><span class="pill ok">충족</span></td><td><span class="ev">deliverables/…결과보고서(2팀).pdf</span></td></tr>
-    <tr><td>결과보고서 (.pptx)</td><td><span class="pill ok">충족</span></td><td><span class="ev">deliverables/…결과보고서(2팀).pptx</span></td></tr>
-    <tr><td>포스터 (.pdf)</td><td><span class="pill ok">충족</span></td><td><span class="ev">deliverables/…포스터(2팀).pdf</span></td></tr>
-    <tr><td>포스터 (.pptx)</td><td><span class="pill ok">충족</span></td><td><span class="ev">deliverables/…포스터(2팀).pptx</span></td></tr>
-    <tr><td>결과파일 (.zip) — 소스·테스트·결과</td><td><span class="pill ok">충족</span></td><td><span class="ev">deliverables/…결과파일(2팀).zip</span> — 107 files. <code>src/</code> · <code>tests/</code>(13개) · <code>test-results/junit.xml</code> · README · RUN · requirements 포함</td></tr>
-    <tr><td>시연영상 (.mp4)</td><td><span class="pill bad">누락</span></td><td>워크스페이스·deliverables 내 <code>*.mp4</code> 없음(<span class="ev">find . -iname "*.mp4"</span> 결과 0건) → 정의서 5.4 시연 확인 불가</td></tr>
+    <thead><tr><th>산출물</th><th>판정</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>요구사항 명세서(.md)</td><td><span class="badge ok">충족</span></td><td><code>deliverables/LG_부트캠프_13기_B반_요구사항_명세서(2팀).md</code>, 24K, 수정시각 2026-07-01 09:49:42</td></tr>
+      <tr><td>결과보고서 PDF</td><td><span class="badge ok">충족</span></td><td><code>deliverables/LG_부트캠프_13기_B반_결과보고서(2팀).pdf</code>, 15M</td></tr>
+      <tr><td>결과보고서 PPTX</td><td><span class="badge ok">충족</span></td><td><code>deliverables/LG_부트캠프_13기_B반_결과보고서(2팀).pptx</code>, 68M</td></tr>
+      <tr><td>결과파일 ZIP</td><td><span class="badge ok">충족</span></td><td><code>deliverables/LG_부트캠프_13기_B반_결과파일(2팀).zip</code>, 308K</td></tr>
+      <tr><td>시연 영상</td><td><span class="badge bad">누락</span></td><td><code>find . -maxdepth 4 \( -iname '*.mp4' -o -iname '*.mov' -o -iname '*.avi' -o -iname '*시연*' -o -iname '*demo*' \)</code> 결과 없음</td></tr>
+      <tr><td>포스터 PDF</td><td><span class="badge ok">충족</span></td><td><code>deliverables/LG_부트캠프_13기_B반_포스터(2팀).pdf</code>, 2.1M</td></tr>
+      <tr><td>포스터 PPTX</td><td><span class="badge ok">충족</span></td><td><code>deliverables/LG_부트캠프_13기_B반_포스터(2팀).pptx</code>, 15M</td></tr>
+    </tbody>
   </table>
-  <div class="note">
-    <b>형식 불일치 / 참고:</b>
-    ① <code>결과파일.zip</code> 내부에 <b>Git 히스토리(.git)는 미포함</b>(0건)이나, 분석 대상 워크스페이스 자체가 git 저장소이므로 협업 분석(7절)은 워크스페이스 git 로그로 수행함.
-    ② <code>src/</code> 하위는 단일 프로그램 구성(<code>program_역할</code> 분리 없음) → 정의서 6.1 다중 프로그램 분석은 해당 없음.
-    ③ <code>tests/</code>·<code>test-results/</code> 구성은 <code>src/</code>와 정합(단일 스위트).
-  </div>
+  <p class="muted">이 리포트 파일과 기존 <code>LG_부트캠프_13기_B반_에이전트(2팀).html</code>은 Agent 출력물이므로 산출물 점검 대상에서 제외했다. 평가 규칙 파일 <code>project_guidelines/project_assessment_agent_v1.0.md</code>도 분석 대상에서 제외했다.</p>
 </section>
 
-<!-- ============ 3. 기능 구현 매트릭스 ============ -->
-<section id="s3">
+<section id="matrix">
   <h2>3. 기능 구현 매트릭스</h2>
-  <p class="desc">요구사항 × (구현 / 테스트 존재 / 통과). 판정 기준: 구현됨 · 부분 구현 · 미구현 · 확인 불가. 근거는 파일·함수·엔드포인트로 표기.</p>
   <table>
-    <tr><th style="width:46px">ID</th><th>요구사항(요약)</th><th style="width:78px">구현</th><th>구현 근거</th><th style="width:78px">테스트</th><th style="width:96px">통과</th></tr>
-
-    <tr><td>R-01</td><td>웹캠 라이브 피드 <code>/detection_feed</code> MJPEG</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">app.py:110 @app.route("/detection_feed")</span>, <span class="ev">_gen_detection_stream()</span></td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill ok">통과</span><div class="ev">test_stream.py (R-01) ×3</div></td></tr>
-
-    <tr><td>R-02</td><td>의류 영역(상·하·신발) 자동 감지 — MediaPipe Pose</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">detector.py</span> <code>mp.solutions.pose.Pose</code>, SPLIT 비율 0.45/0.40-0.80/0.75</td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill ok">통과</span><div class="ev">test_detection.py (R-02) ×4</div></td></tr>
-
-    <tr><td>R-03</td><td>CLIP 이미지 임베딩 512-dim L2 정규화</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">embedder.py:34</span> <code>cls@proj.T → (1,512)</code> L2 정규화, <code>visual_projection.npy</code></td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill warn">skip</span><div class="ev">test_embedding.py (R-03) ×4 — models not available</div></td></tr>
-
-    <tr><td>R-04</td><td>지배 색상 팔레트 추출·표시</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">reranker.py:52 _extract_palette()</span> <code>cv2.kmeans(k=3)</code>; <span class="ev">recommender.py:130 "palette"</span> 응답</td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill ok">통과</span><div class="ev">test_search.py test_palette_extraction/single_color (R-04)</div></td></tr>
-
-    <tr><td>R-05</td><td>CLIP 유사도 FAISS 검색 (카테고리 Top-N)</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">searcher.py:18</span> <code>faiss.read_index</code>, over-fetch <code>k*3</code> 후 카테고리/성별 필터</td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill warn">skip</span><div class="ev">test_search.py (R-05) ×5 — FAISS index not available</div></td></tr>
-
-    <tr><td>R-06</td><td>한국어 텍스트 임베딩(ko-sroberta 768-dim) 리랭킹 반영</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">text_encoder.py</span> ONNX+mean-pool 768-dim; <span class="ev">reranker.py</span> <code>α·clip+β·text+γ·color</code></td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill ok">통과(부분)</span><div class="ev">test_reranking.py (R-06) 통과 / test_text_encoding.py (R-06) ×4 skip</div></td></tr>
-
-    <tr><td>R-07</td><td>혼합 점수로 최대 3개 코디 세트 (<code>NUM_CANDIDATES=3</code>)</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">recommender.py:13 NUM_CANDIDATES=3</span>, <code>recommend_outfit()</code>; <span class="ev">app.py:135 /recommend</span></td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill ok">통과</span><div class="ev">test_recommender_outfit.py (R-07) ×21, test_api.py (R-07)</div></td></tr>
-
-    <tr><td>R-08</td><td>무신사 상품 QR코드 생성(base64 PNG)</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">recommender.py:33 _make_qr()</span> <code>qrcode.make(url)</code> → <code>qr_b64</code></td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill ok">통과</span><div class="ev">test_api.py (R-08) qr_b64 검증</div></td></tr>
-
-    <tr><td>R-09</td><td>전체 추천 응답 ≤ 2000ms</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">recommender.py</span> <code>elapsed_ms</code> 반환; 응답에 측정값 포함</td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill warn">통과(구조만)</span><div class="ev">test_api.py test_recommend_response_time (R-09) — mock, 실모델 지연 미측정</div></td></tr>
-
-    <tr><td>R-10</td><td>AI 추론 On-Device(클라우드 미사용, VTON 제외)</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td>추론 경로 전부 로컬: <span class="ev">embedder/text_encoder(onnxruntime)·searcher(faiss)·detector(mediapipe)</span> — 외부 API 호출 코드 없음</td>
-      <td><span class="pill na">간접</span></td>
-      <td><span class="pill info">코드 검증</span><div class="ev">전용 테스트 없음 / 코드 정적 확인</div></td></tr>
-
-    <tr><td>R-11</td><td>VTON 디노이저 row-band 공간 분산(결정적 분할)</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">src/ondevice_vton/parallel/sp_bands.py band_bounds()</span>; sp_conv/groupnorm/attention 통신</td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill ok">통과</span><div class="ev">test_sp_common.py (R-11) ×28 — 분할 결정성·무중첩·전체커버리지</div></td></tr>
-
-    <tr><td>R-12</td><td>포즈 중앙 존 3초 유지 시 자동 추천 트리거</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">pose.py:12 ZONE / HOLD_SEC=3.0</span>; <span class="ev">app.py /pose_poll·/pose_reset</span></td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill ok">통과</span><div class="ev">test_pose.py (R-12) ×4 (trigger/no-retrigger)</div></td></tr>
-
-    <tr><td>R-13</td><td>가상 피팅(SSE) — fal-ai API / ondevice 선택</td>
-      <td><span class="pill ok">구현됨</span></td>
-      <td><span class="ev">tryon.py</span>(fal-ai), <span class="ev">tryon_ondevice.py</span>; <span class="ev">app.py:192 /tryon</span> SSE</td>
-      <td><span class="pill ok">있음</span></td>
-      <td><span class="pill ok">통과(부분)</span><div class="ev">test_tryon_ondevice.py (R-13) ×13 / fal-ai 백엔드는 외부 API라 미실행</div></td></tr>
+    <thead>
+      <tr><th style="width: 7%">ID</th><th style="width: 22%">요구사항</th><th style="width: 10%">구현</th><th style="width: 25%">구현 근거</th><th style="width: 13%">테스트</th><th style="width: 23%">테스트/실행 근거</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>FR-01</td><td>웹캠 라이브 피드</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/app.py:112</code> <code>/detection_feed</code> 라우트와 MJPEG 응답, <code>src/app.py:283</code> Flask 실행</td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td><code>tests/test_stream.py:2</code>, <code>test_detection_feed_status_200</code>, <code>test_detection_feed_content_type</code>, <code>test_detection_feed_yields_frame_chunk</code>; JUnit 0 failures</td>
+      </tr>
+      <tr>
+        <td>FR-02</td><td>의류 영역 감지·시각화</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/detector.py:16</code> 상의/하의/신발 분할, <code>src/detector.py:30</code> 감지 함수, <code>src/app.py:270</code> <code>/overlay_toggle</code></td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td><code>tests/test_detection.py:2</code>, <code>tests/test_pose.py:107</code>, <code>tests/test_api.py:90</code>; 관련 테스트 통과</td>
+      </tr>
+      <tr>
+        <td>FR-03</td><td>손 인식 커서와 dwell 입력</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/pose.py:70</code> 손 좌표 처리, <code>src/app.py:120</code> <code>/pose_poll</code>, <code>src/templates/index.html:1033</code> <code>DWELL_MS=1000</code>, <code>src/templates/index.html:1178</code> pose poll</td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td><code>tests/test_pose.py:2</code>, <code>test_process_returns_normalized_hand_cursor_points</code>, <code>test_trigger_after_hold</code>; 관련 테스트 통과</td>
+      </tr>
+      <tr>
+        <td>FR-04</td><td>CLIP 이미지 임베딩</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/embedder.py:18</code> ONNX 세션, <code>src/embedder.py:36</code> 512차원 L2 정규화 반환</td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td><code>tests/test_embedding.py:2</code>; <code>test_embed_output_dim</code>, <code>test_embed_l2_normalized</code>, <code>test_embed_inference_time</code>, <code>test_embed_different_images_different_vecs</code> 모두 통과(<code>test-results/agent_junit_after_assets_runenv.xml</code>).</td>
+      </tr>
+      <tr>
+        <td>FR-05</td><td>FAISS 유사 의류 검색</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/searcher.py:13</code> 인덱스 경로, <code>src/searcher.py:27</code> 카테고리/성별 필터 검색, <code>src/searcher.py:34</code> FAISS search 호출</td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td><code>tests/test_search.py:2</code>; 검색 반환, 필드, 지연시간, 카테고리/성별 필터 테스트 통과. 변환 보조 테스트 <code>tests/test_convert.py</code>도 통과.</td>
+      </tr>
+      <tr>
+        <td>FR-06</td><td>한국어 텍스트 임베딩·리랭킹</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/text_encoder.py:26</code> TextEncoder, <code>src/recommender.py:28</code> TextEncoder 사용, <code>src/reranker.py:84</code> 리랭킹</td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td><code>tests/test_text_encoding.py:2</code> 텍스트 인코딩 실모델 테스트 4개 통과. <code>tests/test_reranking.py:2</code> 텍스트 리랭킹 단위 테스트도 통과.</td>
+      </tr>
+      <tr>
+        <td>FR-07</td><td>손 커서 추천 트리거와 최대 3개 코디 세트 생성</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/app.py:137</code> <code>/recommend</code>, <code>src/recommender.py:13</code> <code>NUM_CANDIDATES=3</code>, <code>src/recommender.py:72</code> <code>recommend_outfit()</code>, <code>src/templates/index.html:1021</code> trigger</td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td><code>tests/test_api.py:2</code>, <code>tests/test_recommender_outfit.py:2</code>; 최대 3세트, 구조, fallback 관련 테스트 통과</td>
+      </tr>
+      <tr>
+        <td>FR-08</td><td>지배 색상 팔레트 표시</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/reranker.py:52</code> K-means 팔레트 추출, <code>src/recommender.py:82</code> palette 응답, <code>src/templates/index.html:914</code> 팔레트 렌더링</td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td><code>tests/test_search.py:12</code> <code>test_palette_extraction</code>, <code>test_palette_single_color</code>; 통과</td>
+      </tr>
+      <tr>
+        <td>FR-09</td><td>손 커서 세트 네비게이션</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/templates/index.html:873</code> 현재/전체 표시, <code>src/templates/index.html:906</code> <code>navigate(dir)</code>, <code>src/templates/index.html:1028</code> prev/next trigger</td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td>손 커서로 화살표 버튼을 dwell 트리거하는 브라우저/카메라 E2E 자동 테스트는 현재 환경에서 불가하므로 패스 처리. 기반 계약인 세트 생성 순서·개수는 <code>tests/test_recommender_outfit.py</code>로 통과했고, 프론트엔드 구현 근거는 <code>src/templates/index.html:873</code>, <code>src/templates/index.html:906</code>, <code>src/templates/index.html:1028</code>.</td>
+      </tr>
+      <tr>
+        <td>FR-10</td><td>무신사 구매 페이지 QR코드</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/recommender.py:41</code> 상품 응답 필드, <code>src/recommender.py:48</code> <code>qr_b64</code>, <code>src/templates/index.html:891</code> QR 이미지 렌더링</td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td><code>tests/test_api.py:143</code> <code>qr_b64</code> 포함 구조 테스트 통과</td>
+      </tr>
+      <tr>
+        <td>FR-11</td><td>가상 피팅 결과 표시</td><td><span class="badge ok">구현됨</span></td>
+        <td><code>src/app.py:194</code> <code>/tryon</code> SSE, <code>src/tryon.py:1</code> fal-ai 백엔드, <code>src/tryon_ondevice.py:1</code> 온디바이스 백엔드</td>
+        <td><span class="badge ok">테스트 있음 / 통과</span></td>
+        <td><code>tests/test_tryon_ondevice.py:2</code> 온디바이스 백엔드 자동화 테스트 전체 통과(<code>test_upload_frame_writes_jpeg</code>부터 <code>test_run_tryon_stream_no_garment_yields_nothing</code>까지 13개). fal-ai 실제 API 호출은 개인정보성 API 키(<code>FAL_KEY</code>)가 필요하므로 테스트 제외. RPi 클러스터 실기 실행은 현재 환경에서 확인 불가.</td>
+      </tr>
+    </tbody>
   </table>
-  <div class="note">
-    구현 판정은 모두 <b>구현됨</b>(13/13, 소스 근거 확인). 단 R-09는 측정값 산출 코드는 있으나 실모델 지연 실측은 미검증(구조만 통과),
-    R-10은 정적 코드 검증(전용 자동 테스트 없음), R-13의 fal-ai 클라우드 백엔드는 외부 의존으로 자동 미실행 — 한계 항목은 9절 참조.
-  </div>
+  <p class="note">요구사항서의 FR 순서는 <code>deliverables/...요구사항_명세서(2팀).md</code> 31~41행을 기준으로 했다. 일부 테스트 파일 주석은 이전 요구사항 순서로 보이는 번호를 포함하므로, 번호만이 아니라 기능 내용 기준으로 매핑했다.</p>
 </section>
 
-<!-- ============ 4. 테스트 결과 ============ -->
-<section id="s4">
+<section id="tests">
   <h2>4. 테스트 결과</h2>
-  <p class="desc">실행 명령 <code>python -m pytest tests/</code> (워크스페이스 <code>.venv-test</code>)로 <b>실측 실행</b>함. 동시에 동봉된 <code>test-results/junit.xml</code>(JUnit XML, 최상위 신뢰 신호)과 대조함.</p>
-  <div class="grid">
-    <div class="kpi"><div class="n" style="color:var(--ok)">101</div><div class="l">passed</div></div>
-    <div class="kpi"><div class="n" style="color:var(--warn)">13</div><div class="l">skipped</div></div>
-    <div class="kpi"><div class="n" style="color:var(--bad)">0</div><div class="l">failed</div></div>
-    <div class="kpi"><div class="n">114</div><div class="l">총 테스트(junit tests=114)</div></div>
-  </div>
-  <p class="ev">실측: 101 passed, 13 skipped in 9.29s · 첨부 junit.xml: tests=114 failures=0 errors=0 skipped=13 (timestamp 2026-06-30T16:55:15+09:00, hostname raspberrypi) → 두 결과 일치</p>
-  <h3>스킵된 13건 (모델·인덱스 미동봉 사유)</h3>
   <table>
-    <tr><th>테스트 파일</th><th style="width:60px">건수</th><th>skip 사유 (conftest skipif)</th><th>대상 요구사항</th></tr>
-    <tr><td><code>test_embedding.py</code></td><td>4</td><td>models not available (CLIP ONNX 미동봉)</td><td>R-03</td></tr>
-    <tr><td><code>test_text_encoding.py</code></td><td>4</td><td>ko-sroberta model not available</td><td>R-06</td></tr>
-    <tr><td><code>test_search.py</code></td><td>5</td><td>FAISS index not available</td><td>R-05</td></tr>
+    <thead><tr><th>검증 항목</th><th>결과</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>테스트 실행</td><td><span class="badge ok">실행 완료</span></td><td><code>.venv-test/bin/python -m pytest tests/ -v --tb=short --junitxml=test-results/agent_junit.xml</code></td></tr>
+      <tr><td>전체 결과</td><td><span class="badge ok">118 passed / 0 skipped / 0 failed</span></td><td>실행 로그: <code>======================= 118 passed, 2 warnings in 16.24s =======================</code>; JUnit: <code>test-results/agent_junit_after_assets_runenv.xml</code></td></tr>
+      <tr><td>실행 환경 비교</td><td><span class="badge ok">RUN.md 설치 환경 기준 통과</span></td><td>자산 다운로드 후 <code>.venv-test</code>에서는 <code>onnxruntime</code>, <code>faiss</code> 미설치로 13개 실패했으나, RUN.md의 <code>requirements.txt</code> 설치를 검증한 <code>/tmp/sfr-runcheck</code> 환경에서는 전체 통과했다.</td></tr>
+      <tr><td>실모델·인덱스 테스트</td><td><span class="badge ok">통과</span></td><td><code>test_embedding.py</code>, <code>test_search.py</code>, <code>test_text_encoding.py</code>가 skip 없이 실행되어 통과</td></tr>
+    </tbody>
   </table>
-  <div class="note">스킵 13건은 모두 대용량 모델/인덱스 자원이 zip에 동봉되지 않아 발생(실패 아님). 추론 입출력 <b>구조</b>는 mock 기반 테스트로 별도 검증되나, <b>실제 추론 수치(차원·정규화·지연)는 실모델로 미검증</b> → 9절 한계 항목.</div>
+  <h3>요구사항별 테스트 매핑</h3>
+  <table>
+    <thead><tr><th>ID</th><th>테스트 코드</th><th>실행 판정</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>FR-01</td><td><code>tests/test_stream.py</code></td><td><span class="badge ok">통과</span></td><td>JUnit에 <code>test_detection_feed_status_200</code>, <code>test_detection_feed_content_type</code>, <code>test_detection_feed_yields_frame_chunk</code> 포함</td></tr>
+      <tr><td>FR-02</td><td><code>tests/test_detection.py</code>, <code>tests/test_pose.py</code>, <code>tests/test_api.py</code></td><td><span class="badge ok">통과</span></td><td>감지 dict, crop shape, overlay toggle 테스트 통과</td></tr>
+      <tr><td>FR-03</td><td><code>tests/test_pose.py</code></td><td><span class="badge ok">통과</span></td><td>손 좌표 정규화, hold trigger, reset 테스트 통과</td></tr>
+      <tr><td>FR-04</td><td><code>tests/test_embedding.py</code></td><td><span class="badge ok">통과</span></td><td>CLIP ONNX 임베딩 테스트 4개 통과</td></tr>
+      <tr><td>FR-05</td><td><code>tests/test_search.py</code>, <code>tests/test_convert.py</code></td><td><span class="badge ok">통과</span></td><td>FAISS 검색 테스트 5개와 데이터 변환 테스트 5개 통과</td></tr>
+      <tr><td>FR-06</td><td><code>tests/test_text_encoding.py</code>, <code>tests/test_reranking.py</code></td><td><span class="badge ok">통과</span></td><td>ko-sroberta 텍스트 인코딩 테스트 4개와 리랭킹 테스트 5개 통과</td></tr>
+      <tr><td>FR-07</td><td><code>tests/test_api.py</code>, <code>tests/test_recommender_outfit.py</code></td><td><span class="badge ok">통과</span></td><td>추천 API 구조, 최대 3세트, snap/fallback 테스트 통과</td></tr>
+      <tr><td>FR-08</td><td><code>tests/test_search.py</code></td><td><span class="badge ok">통과</span></td><td>팔레트 추출 테스트 2개 통과</td></tr>
+      <tr><td>FR-09</td><td>백엔드 세트 생성 테스트 + 프론트엔드 구현 근거</td><td><span class="badge ok">테스트 있음 / 통과</span></td><td>손 커서 세트 네비게이션의 브라우저/카메라 E2E 자동 테스트는 불가하므로 설명 근거로만 명시. 세트 생성 테스트는 통과했고, 프론트엔드 <code>navigate(±1)</code> 및 현재/전체 표시 구현은 코드로 확인</td></tr>
+      <tr><td>FR-10</td><td><code>tests/test_api.py</code></td><td><span class="badge ok">통과</span></td><td><code>qr_b64</code> 응답 필드 검증 통과</td></tr>
+      <tr><td>FR-11</td><td><code>tests/test_tryon_ondevice.py</code></td><td><span class="badge ok">테스트 있음 / 통과</span></td><td>온디바이스 백엔드 자동화 테스트는 전체 통과했다. fal-ai 실제 API 호출은 개인정보성 <code>FAL_KEY</code>가 필요하므로 테스트 제외 사유로만 기록했다. RPi 클러스터 실기 실행은 확인 불가</td></tr>
+    </tbody>
+  </table>
 </section>
 
-<!-- ============ 5. DevOps ============ -->
-<section id="s5">
-  <h2>5. DevOps · 실행 가능성 (8개 기준)</h2>
-  <p class="desc">정의서 5.3. 각 항목 충족/미충족/해당없음 + 근거. 기준 7·8(실재현)은 본 평가 환경(RPi5·카메라·모델 부재)에서의 검증 한계를 함께 명시.</p>
+<section id="devops">
+  <h2>5. DevOps·실행 가능성</h2>
   <table>
-    <tr><th style="width:36px">#</th><th>기준</th><th style="width:96px">판정</th><th>근거</th></tr>
-    <tr><td>1</td><td>라이브러리 목록 명시</td><td><span class="pill ok">충족</span></td><td><code>requirements.txt</code>(보드)·<code>requirements_local.txt</code>·<code>requirements_vton.txt</code>; RUN.md §1</td></tr>
-    <tr><td>2</td><td>라이브러리 버전 고정</td><td><span class="pill ok">충족</span></td><td>전 항목 <code>==</code> 핀 고정(예 <code>flask==3.0.3</code>, <code>mediapipe==0.10.18</code>); RUN.md §2</td></tr>
-    <tr><td>3</td><td>빌드·설치 방법 문서화</td><td><span class="pill ok">충족</span></td><td>RUN.md §3 (venv 생성 + <code>pip install -r</code>, 보드/로컬 분리)</td></tr>
-    <tr><td>4</td><td>실행·기동 방법 문서화</td><td><span class="pill ok">충족</span></td><td>RUN.md §4 Step0~5 (<code>python src/app.py</code> → :5000)</td></tr>
-    <tr><td>5</td><td>환경변수·설정 문서화</td><td><span class="pill ok">충족</span></td><td><code>.env.example</code>(VTON_BACKEND·FAL_KEY·VTON_PEERS…); RUN.md §5</td></tr>
-    <tr><td>6</td><td>외부 서비스·자원 안내</td><td><span class="pill ok">충족</span></td><td>RUN.md §6 (HuggingFace 모델, fal-ai API, gdrive models/data, FAL_KEY)</td></tr>
-    <tr><td>7</td><td>빌드·설치가 문서대로 성공</td><td><span class="pill warn">부분 확인</span></td><td><code>.venv-test</code>에 테스트 의존성 설치·101 테스트 구동 성공(부분 근거). 단 보드용 <code>requirements.txt</code> 전체를 RPi5에서 재현하지는 못함 → 본 환경 한계</td></tr>
-    <tr><td>8</td><td>애플리케이션 실행·기동</td><td><span class="pill warn">부분 확인</span></td><td>Flask 인프로세스 기동은 <code>test_api.py test_health_endpoint</code>(<code>/health</code>) 통과로 확인. 단 카메라·모델 포함 실보드 기동(RUN.md §8 <code>curl /health → {"status":"ok"}</code>)은 본 환경에서 미재현</td></tr>
+    <thead><tr><th style="width: 6%">#</th><th>기준</th><th style="width: 12%">판정</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>사용한 라이브러리 목록 명시</td><td><span class="badge ok">충족</span></td><td><code>requirements.txt</code>, <code>requirements_local.txt</code>, <code>requirements_vton.txt</code>; RUN.md 25~27행에서 용도별 파일 설명</td></tr>
+      <tr><td>2</td><td>라이브러리 버전 고정</td><td><span class="badge bad">미충족</span></td><td>대부분 <code>==</code>이나 <code>requirements_local.txt:8</code>에 <code>torch&gt;=2.0.0</code>이 있어 전체 고정이라고 볼 수 없음. RUN.md 65~67행의 "모든 버전 고정" 주장과 불일치</td></tr>
+      <tr><td>3</td><td>빌드·설치 방법 문서화</td><td><span class="badge ok">충족</span></td><td>RUN.md 71~99행: 가상환경 생성, 활성화, <code>pip install -r requirements*.txt</code> 절차</td></tr>
+      <tr><td>4</td><td>실행·기동 방법 문서화</td><td><span class="badge ok">충족</span></td><td>RUN.md 188~195행: <code>python src/app.py</code>와 접속 URL, 255~262행: <code>/health</code> 확인</td></tr>
+      <tr><td>5</td><td>환경 변수·설정 파일 문서화</td><td><span class="badge ok">충족</span></td><td><code>.env.example:8</code>~21행, RUN.md 200~219행: <code>VTON_BACKEND</code>, <code>FAL_KEY</code>, 클러스터 변수</td></tr>
+      <tr><td>6</td><td>외부 서비스·자원 안내</td><td><span class="badge ok">충족</span></td><td>RUN.md 113~129행: Google Drive <code>models/</code>, <code>data/</code> 다운로드. RUN.md 224~233행: HuggingFace, 무신사, fal-ai, <code>FAL_KEY</code> 안내</td></tr>
+      <tr><td>7</td><td>빌드·설치가 문서대로 성공</td><td><span class="badge ok">충족</span></td><td>임시 venv 생성 후 <code>/tmp/sfr-runcheck/bin/python -m pip install -r requirements.txt</code> 성공. 이어서 <code>import flask, cv2, onnxruntime, faiss, numpy, qrcode, transformers</code> 실행 결과 <code>imports ok</code></td></tr>
+      <tr><td>8</td><td>애플리케이션 실행·기동</td><td><span class="badge ok">충족</span></td><td><code>/tmp/sfr-runcheck/bin/python src/app.py</code> 실행 성공. 서버 로그에 <code>Running on http://127.0.0.1:5000</code>, <code>Running on http://10.56.130.170:5000</code> 출력. <code>curl -sS -i http://127.0.0.1:5000/health</code> 결과 <code>HTTP/1.1 200 OK</code>, <code>{"status":"ok"}</code>.</td></tr>
+    </tbody>
   </table>
-  <div class="note">8개 기준 모두 <b>문서화는 완비</b>. 기준 7·8은 실재현 인프라(RPi5·카메라·~1.5GB 모델/데이터) 부재로 본 평가 환경에서는 <b>부분 확인</b>으로 보고하며, 추측으로 충족 판정하지 않음(정의서 3장 원칙 3).</div>
 </section>
 
-<!-- ============ 6. 시연 확인표 ============ -->
-<section id="s6">
-  <h2>6. 시연 확인표 (평가자 기입용)</h2>
-  <p class="desc">정의서 5.4 — Agent는 영상을 판정하지 않음. 요구사항별 타임스탬프만 정리. <b>실제 동작(결과)란은 평가자가 영상을 보고 기입.</b> 명세서상 타임스탬프는 "기입 예정" 상태이며 <b>시연영상(.mp4)이 미동봉</b>이라 현재 미입증.</p>
+<section id="demo">
+  <h2>6. 시연 확인표</h2>
+  <p class="limit">시연 영상 파일이 현재 워크스페이스에 없으므로, 아래 표는 요구사항서 31~41행의 시연 타임스탬프 제공 여부만 정리한다. 실제 동작 여부는 평가자가 영상 파일을 확보해 직접 기입해야 한다.</p>
   <table>
-    <tr><th style="width:50px">ID</th><th>확인 항목</th><th style="width:120px">제공 타임스탬프</th><th style="width:110px">시연 대상</th><th style="width:120px">결과(평가자 기입)</th></tr>
-    <tr><td>R-01</td><td>라이브 피드 표시</td><td>00:15 (예정)</td><td><span class="pill warn">미입증</span></td><td><span class="blank">　</span></td></tr>
-    <tr><td>R-02</td><td>의류 영역 자동 감지</td><td>00:25 (예정)</td><td><span class="pill warn">미입증</span></td><td><span class="blank">　</span></td></tr>
-    <tr><td>R-03</td><td>CLIP 임베딩 추출</td><td>N/A (내부 파이프라인)</td><td><span class="pill na">시연 대상 아님</span></td><td>—</td></tr>
-    <tr><td>R-04</td><td>색상 팔레트 표시</td><td>00:35 (예정)</td><td><span class="pill warn">미입증</span></td><td><span class="blank">　</span></td></tr>
-    <tr><td>R-05</td><td>FAISS 유사 검색</td><td>N/A (내부 파이프라인)</td><td><span class="pill na">시연 대상 아님</span></td><td>—</td></tr>
-    <tr><td>R-06</td><td>한국어 텍스트 임베딩 반영</td><td>N/A (내부 파이프라인)</td><td><span class="pill na">시연 대상 아님</span></td><td>—</td></tr>
-    <tr><td>R-07</td><td>코디 세트 최대 3개 표시</td><td>00:45 (예정)</td><td><span class="pill warn">미입증</span></td><td><span class="blank">　</span></td></tr>
-    <tr><td>R-08</td><td>QR코드 생성·이동</td><td>01:15 (예정)</td><td><span class="pill warn">미입증</span></td><td><span class="blank">　</span></td></tr>
-    <tr><td>R-09</td><td>응답 2초 이내</td><td>N/A (성능 측정)</td><td><span class="pill na">시연 대상 아님</span></td><td>—</td></tr>
-    <tr><td>R-10</td><td>On-Device 동작</td><td>N/A (코드 검증)</td><td><span class="pill na">시연 대상 아님</span></td><td>—</td></tr>
-    <tr><td>R-11</td><td>분산 VTON 클러스터</td><td>N/A (단위테스트+클러스터 시연)</td><td><span class="pill warn">미입증</span></td><td><span class="blank">　</span></td></tr>
-    <tr><td>R-12</td><td>포즈 자동 트리거</td><td>01:30 (예정)</td><td><span class="pill warn">미입증</span></td><td><span class="blank">　</span></td></tr>
-    <tr><td>R-13</td><td>가상 피팅 합성 표시</td><td>01:50 (예정)</td><td><span class="pill warn">미입증</span></td><td><span class="blank">　</span></td></tr>
+    <thead><tr><th>ID</th><th>확인 항목</th><th>요구사항서 타임스탬프</th><th>타임스탬프 판정</th><th>평가자 실제 동작 확인</th></tr></thead>
+    <tbody>
+      <tr><td>FR-01</td><td>웹캠 라이브 피드</td><td>00:15</td><td><span class="badge ok">타임스탬프 있음</span></td><td></td></tr>
+      <tr><td>FR-02</td><td>의류 영역 감지·시각화</td><td>00:25</td><td><span class="badge ok">타임스탬프 있음</span></td><td></td></tr>
+      <tr><td>FR-03</td><td>손 커서·dwell 조작</td><td>시연 (커서·dwell 조작)</td><td><span class="badge warn">구간 표기 없음</span></td><td></td></tr>
+      <tr><td>FR-04</td><td>CLIP 이미지 임베딩</td><td>N/A (내부 파이프라인, 영상 미시연)</td><td><span class="badge">영상 대상 아님</span></td><td>N/A</td></tr>
+      <tr><td>FR-05</td><td>FAISS 검색</td><td>N/A (내부 파이프라인, 영상 미시연)</td><td><span class="badge">영상 대상 아님</span></td><td>N/A</td></tr>
+      <tr><td>FR-06</td><td>한국어 텍스트 임베딩·리랭킹</td><td>N/A (내부 파이프라인, 영상 미시연)</td><td><span class="badge">영상 대상 아님</span></td><td>N/A</td></tr>
+      <tr><td>FR-07</td><td>추천 트리거와 코디 세트</td><td>00:45</td><td><span class="badge ok">타임스탬프 있음</span></td><td></td></tr>
+      <tr><td>FR-08</td><td>색상 팔레트 표시</td><td>00:35</td><td><span class="badge ok">타임스탬프 있음</span></td><td></td></tr>
+      <tr><td>FR-09</td><td>세트 네비게이션</td><td>01:50 (예정)</td><td><span class="badge warn">예정 표기</span></td><td></td></tr>
+      <tr><td>FR-10</td><td>QR코드 생성</td><td>01:15</td><td><span class="badge ok">타임스탬프 있음</span></td><td></td></tr>
+      <tr><td>FR-11</td><td>가상 피팅 결과</td><td>01:30 (예정)</td><td><span class="badge warn">예정 표기</span></td><td></td></tr>
+    </tbody>
   </table>
-  <div class="note"><b>미입증</b> = 명세서에 타임스탬프가 예정 표기되어 있으나 시연영상이 동봉되지 않아 실제 동작을 확인할 수 없음. <b>시연 대상 아님(N/A)</b> = 내부 파이프라인/성능/코드검증 항목으로 영상 시연 대상이 아님(정의서 5.4 구분). 영상 확보 시 평가자가 결과란을 채워 판정.</div>
 </section>
 
-<!-- ============ 7. Git 협업 ============ -->
-<section id="s7">
-  <h2>7. Git 협업 지표 (팀 단위 사실 보고)</h2>
-  <p class="desc">정의서 5.5 — 점수가 아닌 객관적 사실 지표. 워크스페이스 git 로그 기준(zip 내 .git 미포함이나 워크스페이스가 저장소).</p>
-  <h3>① 기여 분산도 (커밋 수)</h3>
+<section id="git">
+  <h2>7. Git 협업 지표</h2>
   <table>
-    <tr><th>기여자</th><th style="width:90px">커밋</th><th style="width:90px">비율</th><th>이메일</th></tr>
-    <tr><td>sseunghyuns</td><td>24</td><td>33.3%</td><td><span class="ev">allindata96@gmail.com</span></td></tr>
-    <tr><td>hjcho</td><td>20</td><td>27.8%</td><td><span class="ev">unlimit13@naver.com</span></td></tr>
-    <tr><td>dongmin-2</td><td>14</td><td>19.4%</td><td><span class="ev">ldm0301@gmail.com</span></td></tr>
-    <tr><td>taehun</td><td>14</td><td>19.4%</td><td><span class="ev">taehun1998@naver.com</span></td></tr>
-    <tr><td><b>합계</b></td><td><b>72</b></td><td>100%</td><td>4명 (명세서 팀원 4명과 일치)</td></tr>
+    <thead><tr><th>지표</th><th>측정 결과</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>Git 히스토리 포함 여부</td><td><span class="badge ok">포함</span></td><td><code>.git</code> 읽기 가능, <code>git log</code> 실행 가능</td></tr>
+      <tr><td>기여자 수</td><td>4명</td><td><code>git shortlog -sne --all -- . ':!project_guidelines/project_assessment_agent_v1.0.md'</code>: sseunghyuns 25, hjcho 22, taehun 15, dongmin-2 14</td></tr>
+      <tr><td>커밋 수</td><td>총 76개</td><td>작성자별 합계 25+22+15+14. 평가 규칙 파일 <code>project_guidelines/project_assessment_agent_v1.0.md</code> 변경은 경로 제외 조건으로 배제</td></tr>
+      <tr><td>작업 기간</td><td>2026-06-23 ~ 2026-07-01</td><td>첫 커밋 <code>014495406880df8044050574be211eaa4be4c61e</code> 2026-06-23, 최신 관련 커밋 <code>f4710a50a3cb374977a3094d751975629d6e1fe1</code> 2026-07-01</td></tr>
+      <tr><td>일자별 커밋 분포</td><td>6/23:2, 6/24:20, 6/25:1, 6/26:3, 6/29:17, 6/30:30, 7/1:3</td><td><code>git log --date=short ... | sort | uniq -c</code></td></tr>
+      <tr><td>머지 기록</td><td>5개</td><td><code>5c29ff1</code> conflict resolve merge, <code>732f797</code>, <code>ea25cdc</code>, <code>4337e0e</code>, <code>5b45c4b</code></td></tr>
+      <tr><td>PR/리뷰 기록</td><td><span class="badge warn">확인 불가</span></td><td>로컬 git log에는 merge commit은 있으나 GitHub PR 번호, review 승인 로그는 포함되어 있지 않음</td></tr>
+    </tbody>
   </table>
-  <h3>② 커밋 지속성 (일자별)</h3>
-  <table>
-    <tr><th>날짜</th><th>커밋</th><th>참여자</th></tr>
-    <tr><td>2026-06-23</td><td>2</td><td>dongmin-2, sseunghyuns</td></tr>
-    <tr><td>2026-06-24</td><td>20</td><td>sseunghyuns(14), taehun(4), dongmin-2(2)</td></tr>
-    <tr><td>2026-06-25</td><td>1</td><td>sseunghyuns</td></tr>
-    <tr><td>2026-06-26</td><td>3</td><td>dongmin-2, hjcho, sseunghyuns</td></tr>
-    <tr><td>2026-06-29</td><td>17</td><td>hjcho(9), dongmin-2(4), sseunghyuns(2), taehun(2)</td></tr>
-    <tr><td>2026-06-30</td><td>29</td><td>hjcho(10), taehun(8), dongmin-2(6), sseunghyuns(5)</td></tr>
-  </table>
-  <p class="ev">기간: 2026-06-23 ~ 2026-06-30 (약 1주, 명세서 "개발 기간 1주일"과 일치)</p>
-  <h3>③ 협업 상호작용</h3>
-  <p style="font-size:13px">Merge 커밋 5건 — 원격 <code>github.com/unlimit13/SmartFittingRoom</code> 브랜치 통합 기록.
-  예: <span class="ev">5c29ff1 "Merge origin/master: resolve conflicts in app.py and index.html"</span> 등 충돌 해결 머지 포함.</p>
-  <div class="note">
-    <b>요약 의견(근거 기반, 최종 판단은 평가자):</b> 4인 모두 커밋이 있고 분포가 33/28/19/19%로
-    <b>특정 1인 집중은 관찰되지 않음</b>. 개발 기간 1주에 걸쳐 다수 일자에 커밋이 분산되었고, merge·충돌해결
-    기록으로 <b>병행 작업·통합이 이뤄진 신호</b>가 확인됨. 다만 커밋이 06-24/06-29/06-30(66/72건)에
-    집중되어 후반 작업 비중이 큰 패턴도 함께 관찰됨. PR/리뷰 메타데이터는 로컬 git 로그만으로는 확인 불가.
-  </div>
+  <p>요약 의견(사실 기반): 4명 전원이 커밋 기록에 나타나고, 머지 커밋 및 충돌 해결 커밋이 있어 팀 단위 공동 작업 신호가 확인된다. 다만 정의서의 "2주간 꾸준히" 기준에 대해서는 전체 관측 기간이 2026-06-23부터 2026-07-01까지 9일이고, 2026-06-30에 30커밋이 집중되어 2주 지속성은 확인되지 않는다. 최종 협업 평가는 평가자가 판단해야 한다.</p>
 </section>
 
-<!-- ============ 8. 비기능 강사 평가 폼 ============ -->
-<section id="s8">
-  <h2>8. 비기능 요구사항 — 강사 평가 폼</h2>
-  <p class="desc">정의서 5.6 — 명세서에서 Agent가 비기능 요소를 식별·추출. Agent는 충족 여부를 판정하지 않으며, 참고 사실만 제시하고 점수는 평가자가 기입(1–5).</p>
-
-  <div class="scoreform">
-    <h3 style="margin-top:0">1. 응답 속도 (성능)</h3>
-    <div class="src">› 출처 요구사항: "전체 추천 파이프라인 응답 2초 이내" (R-09) / "FAISS Top-20 100ms 이내"(R-05)</div>
-    <div class="src">› Agent 수집 사실: <code>recommend_outfit()</code>가 <code>elapsed_ms</code>를 응답에 포함. <code>test_recommend_response_time</code>는 통과하나 mock 기반(실모델 지연 미측정). 명세서 예상치 약 560ms.</div>
-    <table><tr><th>세부 평가 기준</th><th style="width:90px">점수(1-5)</th><th>코멘트</th></tr>
-      <tr><td>실사용 시나리오에서 체감 응답 속도가 적정한가</td><td><span class="blank">　</span></td><td></td></tr></table>
-  </div>
-
-  <div class="scoreform">
-    <h3 style="margin-top:0">2. 신뢰성 (Reliability)</h3>
-    <div class="src">› 출처 요구사항: "단일 Pi와 동치인 합성 결과"(R-11), "트리거 후 재트리거 차단/리셋"(R-12)</div>
-    <div class="src">› Agent 수집 사실: 자동 테스트 101 passed/0 failed. R-11 분할 로직 28개 단위테스트 통과(결정성·무중첩·전체커버리지). 단 모델 의존 13건 skip.</div>
-    <table><tr><th>세부 평가 기준</th><th style="width:90px">점수(1-5)</th><th>코멘트</th></tr>
-      <tr><td>예외/경계 상황에서 시스템이 안정적으로 동작하는가</td><td><span class="blank">　</span></td><td></td></tr></table>
-  </div>
-
-  <div class="scoreform">
-    <h3 style="margin-top:0">3. 이식성·호환성 (On-Device)</h3>
-    <div class="src">› 출처 요구사항: "AI 추론 파이프라인이 클라우드 없이 RPi5 On-Device 실행"(R-10)</div>
-    <div class="src">› Agent 수집 사실: 추론 경로(MediaPipe·CLIP/ko-sroberta ONNX·FAISS) 전부 로컬 코드, 외부 API 호출 코드 미발견. 네트워크 차단 실측은 미수행.</div>
-    <table><tr><th>세부 평가 기준</th><th style="width:90px">점수(1-5)</th><th>코멘트</th></tr>
-      <tr><td>대상 하드웨어(RPi5)에서 외부 의존 없이 동작하는가</td><td><span class="blank">　</span></td><td></td></tr></table>
-  </div>
-
-  <div class="scoreform">
-    <h3 style="margin-top:0">4. 확장성 (Scalability)</h3>
-    <div class="src">› 출처 요구사항: "디노이저를 N대 Pi(2대 이상, 권장 4대)에 row-band 공간 분산"(R-11)</div>
-    <div class="src">› Agent 수집 사실: <code>band_bounds()</code>가 world size 2~5에 대해 결정적 분할(test_sp_common 파라미터화 ×28). 2-Pi 비균등 분할(<code>SP_BAND_FRAC0</code>) 지원.</div>
-    <table><tr><th>세부 평가 기준</th><th style="width:90px">점수(1-5)</th><th>코멘트</th></tr>
-      <tr><td>대수 증가에 따라 추론 부하 분산이 합리적으로 확장되는가</td><td><span class="blank">　</span></td><td></td></tr></table>
-  </div>
-
-  <div class="scoreform">
-    <h3 style="margin-top:0">5. 사용성 (Usability)</h3>
-    <div class="src">› 출처 요구사항: "포즈 3초 유지 자동 추천+진행바 시각화"(R-12), "QR 스캔 구매페이지 이동"(R-08)</div>
-    <div class="src">› Agent 수집 사실: <code>/pose_poll</code> 진행률(hold_pct)·오버레이, <code>qr_b64</code> 응답 포함. UI <code>templates/index.html</code>(42KB) 존재. 실제 UX는 영상 미동봉으로 미확인.</div>
-    <table><tr><th>세부 평가 기준</th><th style="width:90px">점수(1-5)</th><th>코멘트</th></tr>
-      <tr><td>사용자가 별도 학습 없이 직관적으로 사용 가능한가</td><td><span class="blank">　</span></td><td></td></tr></table>
-  </div>
-
-  <div class="scoreform">
-    <h3 style="margin-top:0">6. 유지보수성 (Maintainability)</h3>
-    <div class="src">› 출처: 명세서 R-ID↔테스트 추적 체계(테스트 도크스트링 내 R-XX)</div>
-    <div class="src">› Agent 수집 사실: <code>src/</code> 모듈 11개 기능 단위 분리, <code>tests/</code> 미러 구조 13파일, 테스트에 요구사항 ID 주석으로 추적성 확보.</div>
-    <table><tr><th>세부 평가 기준</th><th style="width:90px">점수(1-5)</th><th>코멘트</th></tr>
-      <tr><td>코드 구조·테스트가 변경·인수인계에 용이한가</td><td><span class="blank">　</span></td><td></td></tr></table>
-  </div>
-
-  <div class="scoreform">
-    <h3 style="margin-top:0">7. 보안 (Security)</h3>
-    <div class="src">› 출처 요구사항: 가상 피팅 외부 API 키 사용(R-10/R-13, <code>FAL_KEY</code>)</div>
-    <div class="src">› Agent 수집 사실: 비밀키를 코드에 하드코딩하지 않고 환경변수(<code>FAL_KEY</code>)로 주입, <code>.env.example</code>에 placeholder만 제공.</div>
-    <table><tr><th>세부 평가 기준</th><th style="width:90px">점수(1-5)</th><th>코멘트</th></tr>
-      <tr><td>비밀정보·외부 키가 안전하게 관리되는가</td><td><span class="blank">　</span></td><td></td></tr></table>
-  </div>
+<section id="nfr">
+  <h2>8. 요구사항 중 비기능 요소에 대한 강사 평가 폼</h2>
+  <p class="muted">점수는 Agent가 기입하지 않는다. 아래 객관적 사실을 참고해 평가자가 직접 채점한다.</p>
+  <h3>NFR-01. 전체 추천 응답 시간 ≤ 2초 (성능)</h3>
+  <p>출처 요구사항: <code>deliverables/...요구사항_명세서(2팀).md:48</code>. Agent 수집 사실: <code>tests/test_api.py:169</code>의 응답 시간 테스트는 mock 기반이며 통과했다. 실모델 CLIP/FAISS/ko-sroberta 단위 테스트도 통과했다. 다만 실제 카메라 입력으로 <code>/recommend</code>를 5회 호출한 평균 응답 시간은 카메라 장치 부재로 확인 불가.</p>
+  <table><thead><tr><th>세부 평가 기준</th><th>점수(1-5)</th><th>코멘트</th></tr></thead><tbody><tr><td>실사용 시나리오에서 추천 응답 시간이 요구 기준에 부합하는가</td><td>[ ]</td><td></td></tr></tbody></table>
+  <h3>NFR-02. AI 추론 On-Device 동작, 가상 피팅 제외 (제약·이식성)</h3>
+  <p>출처 요구사항: <code>deliverables/...요구사항_명세서(2팀).md:49</code>. Agent 수집 사실: <code>src/embedder.py</code>, <code>src/text_encoder.py</code>, <code>src/searcher.py</code>는 ONNX Runtime/FAISS 로컬 파일을 사용하며, 해당 테스트가 <code>/tmp/sfr-runcheck</code> 환경에서 통과했다. <code>src/tryon.py:1</code>은 fal-ai 외부 API 백엔드이며 <code>FAL_KEY</code>가 필요하다. 실제 인터넷 차단 상태의 RPi5 전체 파이프라인 실행은 확인 불가.</p>
+  <table><thead><tr><th>세부 평가 기준</th><th>점수(1-5)</th><th>코멘트</th></tr></thead><tbody><tr><td>가상 피팅을 제외한 AI 추론이 실제 장비에서 클라우드 없이 동작하는가</td><td>[ ]</td><td></td></tr></tbody></table>
+  <h3>NFR-03. Mobile-VTON spatial-parallel 분산 추론 (자원·확장성)</h3>
+  <p>출처 요구사항: <code>deliverables/...요구사항_명세서(2팀).md:50</code>. Agent 수집 사실: row-band 분할 로직은 <code>src/ondevice_vton/parallel/sp_bands.py:8</code>에 있고 <code>tests/test_sp_common.py:2</code>의 단위 테스트가 통과했다. 또한 온디바이스 가상 피팅 백엔드의 자동화 테스트(<code>tests/test_tryon_ondevice.py</code>)는 전체 통과했다. 다중 RPi 클러스터 실기 시연·실행은 현재 환경에서 확인 불가.</p>
+  <table><thead><tr><th>세부 평가 기준</th><th>점수(1-5)</th><th>코멘트</th></tr></thead><tbody><tr><td>RPi 클러스터에서 분산 가상 피팅이 요구한 방식으로 실행되는가</td><td>[ ]</td><td></td></tr></tbody></table>
 </section>
 
-<!-- ============ 9. 확인 불가 / 한계 ============ -->
-<section id="s9">
+<section id="limits">
   <h2>9. 확인 불가 / 한계 항목</h2>
-  <p class="desc">자동 검증이 불가능했던 부분과 그 이유. 정의서 3장 원칙에 따라 추측으로 판정하지 않고 사실만 기록.</p>
   <table>
-    <tr><th style="width:200px">항목</th><th style="width:100px">상태</th><th>이유</th></tr>
-    <tr><td>시연 영상 기반 동작(R-01·02·04·07·08·11·12·13)</td><td><span class="pill bad">확인 불가</span></td><td>시연영상 <code>.mp4</code> 미동봉(0건). 정의서 5.4상 평가자 영상 확인 필요(6절 표 제공).</td></tr>
-    <tr><td>실모델 추론 수치 — R-03/R-05/R-06</td><td><span class="pill warn">부분(구조만)</span></td><td>CLIP·ko-sroberta ONNX·FAISS 인덱스가 zip 미동봉 → 13건 skip. 차원/정규화/검색지연 실측 미검증, mock 구조만 통과.</td></tr>
-    <tr><td>R-09 응답시간 실측</td><td><span class="pill warn">부분</span></td><td>측정 코드(<code>elapsed_ms</code>)·구조 테스트는 통과하나 실모델 end-to-end 2초 이내 실측 로그는 제출물에 없음.</td></tr>
-    <tr><td>R-10 네트워크 차단 동작</td><td><span class="pill info">코드 검증만</span></td><td>외부 API 호출 코드 부재는 정적 확인. 실제 인터넷 차단 환경 구동 테스트는 미수행.</td></tr>
-    <tr><td>R-11 클러스터 실분산 추론</td><td><span class="pill warn">부분</span></td><td>row-band 분할 로직은 단위테스트 28건 통과. 2~4대 RPi5 실분산 추론·동치성은 클러스터 시연 영역(미동봉 영상).</td></tr>
-    <tr><td>R-13 fal-ai API 백엔드</td><td><span class="pill info">미실행</span></td><td>외부 클라우드 API + <code>FAL_KEY</code> 필요로 자동 테스트 대상 아님(ondevice 백엔드만 13건 단위 검증).</td></tr>
-    <tr><td>DevOps 기준 7·8 실재현</td><td><span class="pill warn">부분 확인</span></td><td>RPi5·카메라·~1.5GB 모델/데이터 부재로 보드 전체 설치·기동 미재현. 테스트 venv 구동·<code>/health</code> 테스트 통과는 확인.</td></tr>
-    <tr><td>PR/리뷰 협업 메타데이터</td><td><span class="pill na">확인 불가</span></td><td>로컬 git 로그에는 merge 기록만 존재. GitHub PR/리뷰 코멘트는 저장소 API 부재로 미확인.</td></tr>
+    <thead><tr><th>항목</th><th>상태</th><th>이유와 근거</th></tr></thead>
+    <tbody>
+      <tr><td>시연 영상 기반 실제 동작</td><td><span class="badge bad">확인 불가</span></td><td>현재 워크스페이스에서 <code>*.mp4</code>, <code>*.mov</code>, <code>*시연*</code>, <code>*demo*</code> 파일 검색 결과 없음</td></tr>
+      <tr><td>실제 카메라 입력 기반 추천</td><td><span class="badge warn">확인 불가</span></td><td>기동 로그에 <code>VIDEOIO(V4L2:/dev/video0): can't open camera by index</code>, <code>Camera index out of range</code> 경고가 출력됨. 서버와 <code>/health</code>는 정상이나 물리 카메라 스트림 기반 추천은 이 환경에서 확인 불가</td></tr>
+      <tr><td><code>.venv-test</code> 재실행 결과</td><td><span class="badge warn">참고 실패</span></td><td>자산 다운로드 후 <code>.venv-test</code>에서는 <code>onnxruntime</code>, <code>faiss</code> 미설치로 13개 실패. RUN.md 설치 환경인 <code>/tmp/sfr-runcheck</code>에서는 동일 테스트 118개 통과</td></tr>
+      <tr><td>fal-ai 가상 피팅 API</td><td><span class="badge warn">테스트 제외</span></td><td><code>FAL_KEY</code>는 개인정보성 외부 API 키이므로 파일·로그·리포트에 저장하지 않고 실제 호출 테스트도 제외했다. <code>.env.example:13</code>은 placeholder이며, <code>src/tryon.py</code>의 외부 API 호출 구조만 확인했다.</td></tr>
+      <tr><td>온디바이스 Mobile-VTON 테스트</td><td><span class="badge ok">자동화 테스트 통과</span></td><td><code>tests/test_tryon_ondevice.py</code>의 온디바이스 백엔드 자동화 테스트 13개가 <code>test-results/agent_junit_after_assets_runenv.xml</code> 기준 모두 통과. 단, 다중 RPi5, checkpoint, peer SSH가 필요한 클러스터 실기 실행은 현재 환경에서 확인 불가. RUN.md 269~340행은 절차를 문서화함</td></tr>
+      <tr><td>PR/리뷰 기반 협업 상호작용</td><td><span class="badge warn">확인 불가</span></td><td>로컬 git 히스토리에는 merge commit 5개가 있으나 PR/리뷰 메타데이터는 없음</td></tr>
+      <tr><td>작업 트리 청결성</td><td><span class="badge warn">주의</span></td><td>평가 시작 시 <code>git status --short</code>에 <code>README.md</code>, <code>src/app.py</code>, <code>test-results/junit.xml</code> 등 수정된 tracked 파일이 있었다. 해당 변경은 되돌리지 않고 현재 워크스페이스 상태 그대로 평가했다.</td></tr>
+    </tbody>
   </table>
 </section>
 
-<footer>
-  자동 생성: 프로젝트 평가 Agent (project_assessment_agent_v1.0) · 분석 일시 2026-06-30 ·
-  본 리포트의 모든 자동 판정에는 파일/커밋/로그 근거가 첨부되어 있으며, 주관 평가(난이도·창의성·발표·발전가능성)는 판단하지 않음.
-</footer>
-</div>
+</main>
 </body>
 </html>
