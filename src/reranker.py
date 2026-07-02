@@ -5,8 +5,10 @@ Two-stage reranker:
   3. HSV color compatibility score
 
 Final score = α×clip_sim + β×text_sim + γ×color_compat
-  default (text provided):   α=0.4, β=0.4, γ=0.2
-  fallback (no text input):  α=0.6, β=0.0, γ=0.4
+  default (text provided):        α=0.4,  β=0.4,  γ=0.2
+  fallback (no text input):       α=0.6,  β=0.0,  γ=0.4
+  text_boost (text provided,
+  text_priority flag enabled):    α=0.15, β=0.75, γ=0.10
 """
 import json
 import os
@@ -87,16 +89,21 @@ class Reranker:
         text_vec: np.ndarray | None,
         color_palette: list[str],
         top_n: int = 3,
+        text_boost: bool = False,
     ) -> list[dict]:
         """
         candidates: list of dicts from Searcher.search() with 'score' (clip_sim) and 'dominant_color'
         text_vec: (768,) L2-normalized vector or None
         color_palette: list of dominant hex colors from the detected clothing
+        text_boost: if True and text_vec is not None, weight text_sim much more heavily
         """
         use_text = text_vec is not None
-        alpha = 0.4 if use_text else 0.6
-        beta = 0.4 if use_text else 0.0
-        gamma = 0.2 if use_text else 0.4
+        if text_boost and use_text:
+            alpha, beta, gamma = 0.3, 0.6, 0.10
+        elif use_text:
+            alpha, beta, gamma = 0.4, 0.4, 0.2
+        else:
+            alpha, beta, gamma = 0.6, 0.0, 0.4
 
         scored = []
         for item in candidates:

@@ -5,6 +5,7 @@ import base64
 import io
 import json
 import os
+import random
 
 import qrcode
 
@@ -69,7 +70,7 @@ class Recommender:
         outfit = self._find_snap(product_ids, gender)
         return self._resolve_products(outfit.get("shoes", [])) if outfit else []
 
-    def recommend_outfit(self, frame, anchor_category: str, text_query: str = "", gender: str = "") -> dict:
+    def recommend_outfit(self, frame, anchor_category: str, text_query: str = "", gender: str = "", text_priority: bool = True) -> dict:
         detection = self.detector.detect(frame)
         annotated = detection["annotated"]
         crops = detection["crops"]
@@ -82,10 +83,16 @@ class Recommender:
         palette = self.reranker.extract_palette(anchor_crop)
         img_vec = self.embedder.embed(anchor_crop)
         text_vec = self.text_encoder.encode(text_query) if text_query.strip() else None
+        if text_query in ["남", "여"]:
+            text_vec = None
 
         def get_items(category, n=1):
-            candidates = self.searcher.search(img_vec, category=category, gender=gender or None, top_k=20)
-            ranked = self.reranker.rerank(candidates, text_vec, palette, top_n=n)
+            candidates = self.searcher.search(img_vec, category=category, gender=gender or None, top_k=50)
+            if text_priority and text_vec is None:
+                picked = random.sample(candidates, min(n, len(candidates)))
+            else:
+                picked = self.reranker.rerank(candidates, text_vec, palette, top_n=n, text_boost=text_priority)
+
             return [
                 {
                     "product_id": r["product_id"],
@@ -94,7 +101,7 @@ class Recommender:
                     "image_path": r.get("image_path", ""),
                     "qr_b64":    self._make_qr(r.get("url", "")),
                 }
-                for r in ranked
+                for r in picked
             ]
 
         show_anchor  = anchor_category != "bottoms"
