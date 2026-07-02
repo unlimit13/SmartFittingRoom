@@ -176,16 +176,17 @@
       border-radius: 14px;
       border: 1.5px solid var(--border);
       background: rgba(255,255,255,0.04);
-      color: var(--sub);
-      font-family: inherit; font-size: 1.35rem; font-weight: 500;
+      color: var(--text);
+      font-family: inherit; font-size: 1.35rem; font-weight: 600;
       cursor: pointer; position: relative; overflow: hidden;
       transition: color .2s, border-color .2s, background .2s;
     }
     .pill.active {
-      background: var(--teal-dim);
-      border-color: var(--teal);
-      color: var(--teal);
+      background: var(--teal);
+      border-color: var(--teal-bright);
+      color: #052e16;
       font-weight: 700;
+      box-shadow: 0 0 18px rgba(52,211,153,0.45);
     }
 
     /* ── Mic button ──────────────────────────────────────── */
@@ -194,7 +195,7 @@
       border-radius: 50%;
       border: 1.5px solid var(--border);
       background: rgba(255,255,255,0.05);
-      color: var(--sub); font-size: 1.7rem;
+      color: var(--text); font-size: 1.7rem;
       cursor: pointer; position: relative; overflow: hidden;
       transition: border-color .2s;
       display: flex; align-items: center; justify-content: center;
@@ -262,7 +263,7 @@
       border-radius: 10px;
       border: 1px solid var(--border);
       background: rgba(255,255,255,0.04);
-      color: var(--sub); font-size: 1.5rem;
+      color: var(--text); font-size: 1.5rem;
       cursor: pointer; position: relative; overflow: hidden;
       transition: border-color .2s, color .2s;
     }
